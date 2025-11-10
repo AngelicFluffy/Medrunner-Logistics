@@ -1,0 +1,7 @@
+# Site settings
+title: Testing Site
+url: "https://www.outerhaven.space"
+baseurl: ""
+
+# Enforce HTTPS & preferred domain
+enforce_ssl: www.outerhaven.space
