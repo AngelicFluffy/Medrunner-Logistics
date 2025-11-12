@@ -25,7 +25,6 @@ const STATUS_ICONS = {
 
 let isLoading = false;
 
-// Format availability timestamps for display
 function formatAvailabilityForDisplay(availabilityStr) {
   if (!availabilityStr || availabilityStr.trim() === '') {
     return '<p class="text-gray-400 text-sm">Not specified</p>';
@@ -137,30 +136,22 @@ function formatTimestamp(timestamp) {
   if (!timestamp) return 'N/A';
 
   try {
-    // Handle different timestamp formats
     let date;
-
-    // If it's just a time string (HH:MM:SS), we need to add today's date
     if (typeof timestamp === 'string' && /^\d{2}:\d{2}:\d{2}$/.test(timestamp)) {
-      // It's a time-only string, combine with today's date
       const today = new Date();
       const [hours, minutes, seconds] = timestamp.split(':');
       date = new Date(today.getFullYear(), today.getMonth(), today.getDate(),
                       parseInt(hours), parseInt(minutes), parseInt(seconds));
     } else if (typeof timestamp === 'string' && /^\d{2}\/\d{2}\/\d{4},\s\d{2}:\d{2}:\d{2}$/.test(timestamp)) {
-      // It's already in MM/DD/YYYY, HH:MM:SS format
       return timestamp;
     } else {
-      // Try to parse as a regular date
       date = new Date(timestamp);
     }
 
-    // Check if date is valid
     if (isNaN(date.getTime())) {
       return timestamp.toString();
     }
 
-    // Format as MM/DD/YYYY, HH:MM:SS
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const year = date.getFullYear();
@@ -229,7 +220,6 @@ function renderOrders() {
         });
       }
 
-      // Active Orders Section
       if (activeOrders.length > 0) {
         const activeSection = document.createElement('div');
         activeSection.innerHTML = `
@@ -249,11 +239,9 @@ function renderOrders() {
       }
     }
   } else {
-    // Archived orders view with search and pagination
     if (completedOrders.length === 0) {
       noOrdersMsg.classList.remove('hidden');
     } else {
-      // Sort by date (newest first)
       const sortedOrders = [...completedOrders].sort((a, b) => {
         const dateA = new Date(a.date);
         const dateB = new Date(b.date);
@@ -275,7 +263,6 @@ function filterArchivedOrders() {
     order.status === 'Completed' || order.status === 'Cancelled'
   );
 
-  // Sort by date (newest first)
   const sortedOrders = [...completedOrders].sort((a, b) => {
     const dateA = new Date(a.date);
     const dateB = new Date(b.date);
@@ -322,7 +309,6 @@ function renderArchivedOrders() {
   completedContainer.innerHTML = '';
   completedContainer.className = 'space-y-4';
 
-  // Search controls
   const searchSection = document.createElement('div');
   searchSection.className = 'professional-card p-6 mb-6';
   searchSection.innerHTML = `
@@ -342,7 +328,7 @@ function renderArchivedOrders() {
       </div>
       <div>
         <label class="block text-gray-400 text-sm mb-2">logistician</label>
-        <input type="text" id="search-logistician" placeholder="Search by logistician..."
+        <input type="text" id="search-logistician" placeholder="Search by Logistician..."
                class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:outline-none"
                oninput="filterArchivedOrders()">
       </div>
@@ -350,7 +336,6 @@ function renderArchivedOrders() {
   `;
   completedContainer.appendChild(searchSection);
 
-  // Table header
   const tableHeader = document.createElement('div');
   tableHeader.className = 'professional-card p-4 bg-gray-800/50';
   tableHeader.innerHTML = `
@@ -365,7 +350,6 @@ function renderArchivedOrders() {
   `;
   completedContainer.appendChild(tableHeader);
 
-  // Paginated orders
   const startIndex = (currentPage - 1) * ordersPerPage;
   const endIndex = startIndex + ordersPerPage;
   const paginatedOrders = filteredArchivedOrders.slice(startIndex, endIndex);
@@ -381,7 +365,6 @@ function renderArchivedOrders() {
     });
   }
 
-  // Pagination controls
   const totalPages = Math.ceil(filteredArchivedOrders.length / ordersPerPage);
   if (totalPages > 1 || filteredArchivedOrders.length > 10) {
     const paginationSection = document.createElement('div');
@@ -527,10 +510,8 @@ function createOrderCard(order, isOpen) {
       ` : ''}
     `;
 
-    // Add click logistician to open order detail
     card.addEventListener('click', () => openOrderDetail(order));
 
-  // Add click logistician to claim button if it exists
   if (isOpen) {
     const claimBtn = card.querySelector('.claim-button');
     if (claimBtn) {
@@ -586,7 +567,6 @@ async function openOrderDetail(order) {
   const formattedDate = formatDate(order.date);
   const isArchived = order.status === 'Completed' || order.status === 'Cancelled';
 
-  // Show the side panel
   const panel = document.getElementById('order-detail-panel');
   const listContainer = document.getElementById('orders-list-container');
   const contentDiv = document.getElementById('order-detail-content');
@@ -594,7 +574,6 @@ async function openOrderDetail(order) {
   panel.classList.add('active');
   listContainer.classList.add('with-detail');
 
-  // Show loading state
   contentDiv.innerHTML = `
     <div class="text-center py-20">
       <div class="loading-spinner mx-auto mb-4"></div>
@@ -602,7 +581,6 @@ async function openOrderDetail(order) {
     </div>
   `;
 
-  // Fetch real Discord thread messages
   let messageHistory = [];
   try {
     const response = await fetch(BOT_API_URL, {
@@ -634,16 +612,13 @@ async function openOrderDetail(order) {
         </p>
         <div class="space-y-2 max-h-96 overflow-y-auto bg-gray-800/50 p-4 rounded-lg">
           ${messageHistory.map(msg => {
-            // Format timestamp
             const msgDate = new Date(msg.timestamp);
             const formattedTime = msgDate.toLocaleString();
 
-            // Determine message styling based on author
             const isBot = msg.isBot;
             const borderColor = isBot ? 'border-purple-500' : 'border-blue-500';
             const authorColor = isBot ? 'text-purple-400' : 'text-blue-400';
 
-            // Handle embeds (bot messages)
             let content = msg.content;
             if (msg.embeds && msg.embeds.length > 0) {
               const embed = msg.embeds[0];
@@ -886,13 +861,10 @@ async function updateOrderStatus() {
     if (data && data.success) {
       showToast('Order status updated successfully', 'success');
 
-      // Refresh orders to get updated tracking data
       await fetchOrders();
 
-      // Find the updated order and reopen the detail panel
       const updatedOrder = allOrders.find(o => o.orderId === currentOrder.orderId);
       if (updatedOrder) {
-        // Small delay to ensure tracking data is updated
         setTimeout(() => {
           openOrderDetail(updatedOrder);
         }, 500);
@@ -923,20 +895,14 @@ async function loadThreadMessages(orderId) {
     if (data && data.success) {
       const messageHistory = data.data || [];
 
-      // Find the message history container and update it
       const messageContainer = document.querySelector('#order-detail-panel .space-y-2.max-h-96');
       if (messageContainer && messageHistory.length > 0) {
         messageContainer.innerHTML = messageHistory.map(msg => {
-          // Format timestamp
           const msgDate = new Date(msg.timestamp);
           const formattedTime = msgDate.toLocaleString();
-
-          // Determine message styling based on author
           const isBot = msg.isBot;
           const borderColor = isBot ? 'border-purple-500' : 'border-blue-500';
           const authorColor = isBot ? 'text-purple-400' : 'text-blue-400';
-
-          // Handle embeds (bot messages)
           let content = msg.content;
           if (msg.embeds && msg.embeds.length > 0) {
             const embed = msg.embeds[0];
@@ -956,7 +922,6 @@ async function loadThreadMessages(orderId) {
           `;
         }).join('');
 
-        // Scroll to bottom of message container
         messageContainer.scrollTop = messageContainer.scrollHeight;
       }
     }
@@ -993,7 +958,6 @@ async function sendDiscordMessage() {
       showToast('Message sent to Discord', 'success');
       messageInput.value = '';
 
-      // Refresh just the message history without closing the panel
       await loadThreadMessages(currentOrder.orderId);
     } else {
       throw new Error(data.message || 'Failed to send message');
@@ -1019,7 +983,6 @@ async function claimOrderInternal(orderId, fromModal) {
   let savedUsername = localStorage.getItem('staffDiscordUsername');
   let username = savedUsername;
 
-  // Always prompt if no saved username
   if (!username || username.trim() === '') {
     username = prompt('Enter your Discord username:\n\n(Note: This will be automatically filled in once the system is fully established)');
 
@@ -1129,4 +1092,3 @@ document.addEventListener('keydown', function(e) {
     closeOrderDetail();
   }
 });
-
