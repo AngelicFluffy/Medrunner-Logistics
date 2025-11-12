@@ -105,17 +105,11 @@ window.MedrunnerConfig = {
     return null;
   },
   
-  /**
-   * Check for restriction
-   */
   requiresAcademyAccess: function(itemName) {
     const item = this.getEquipmentItem(itemName);
     return item && (item.restricted || item.requiresAcademyAccess);
   },
   
-  /**
-   * Get all available equipment
-   */
   getAllEquipment: function() {
     return {
       trainingKits: window.MEDRUNNER_CONFIG.EQUIPMENT.TRAINING_KITS,
@@ -123,9 +117,6 @@ window.MedrunnerConfig = {
     };
   },
   
-  /**
-   * Validate configuration
-   */
   validate: function() {
     const config = window.MEDRUNNER_CONFIG;
     const errors = [];
