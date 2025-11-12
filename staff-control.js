@@ -5,7 +5,7 @@ let filteredArchivedOrders = [];
 let currentPage = 1;
 let ordersPerPage = 10;
 
-const BOT_API_URL = 'http://localhost:3000';
+const API = 'https://angla-unsanctionable-visually.ngrok-free.dev';
 
 const STATUS_COLORS = {
   'Received': 'status-received',
@@ -91,7 +91,7 @@ async function fetchOrders() {
     completedContainer.innerHTML = '';
     noOrdersMsg.classList.add('hidden');
 
-    const response = await fetch(BOT_API_URL, {
+    const response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'getOrders' })
@@ -583,7 +583,7 @@ async function openOrderDetail(order) {
 
   let messageHistory = [];
   try {
-    const response = await fetch(BOT_API_URL, {
+    const response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -846,7 +846,7 @@ async function updateOrderStatus() {
       return;
     }
 
-    const response = await fetch(BOT_API_URL, {
+    const response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -882,7 +882,7 @@ async function updateOrderStatus() {
 
 async function loadThreadMessages(orderId) {
   try {
-    const response = await fetch(BOT_API_URL, {
+    const response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -942,7 +942,7 @@ async function sendDiscordMessage() {
   }
 
   try {
-    const response = await fetch(BOT_API_URL, {
+    const response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -996,7 +996,7 @@ async function claimOrderInternal(orderId, fromModal) {
   }
 
   try {
-    const response = await fetch(BOT_API_URL, {
+    const response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1029,7 +1029,7 @@ async function releaseOrder(orderId) {
   }
 
   try {
-    const response = await fetch(BOT_API_URL, {
+    const response = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1092,3 +1092,4 @@ document.addEventListener('keydown', function(e) {
     closeOrderDetail();
   }
 });
+
