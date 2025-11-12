@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logistics Staff Control Center - Medrunner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="medrunner-config.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .professional-card {
+      background: linear-gradient(135deg, rgba(29, 39, 53, 0.6) 0%, rgba(17, 24, 39, 0.8) 100%);
+      border: 1px solid rgba(44, 82, 120, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    .professional-button {
+      background: linear-gradient(135deg, #2c5278 0%, #1e3a5f 100%);
+      border: 1px solid rgba(44, 82, 120, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    .professional-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(44, 82, 120, 0.3);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+
+    .status-received { background-color: #6b7280; color: white; }
+    .status-processing { background-color: #f97316; color: white; }
+    .status-pending { background-color: #3b82f6; color: white; }
+    .status-completed { background-color: #10b981; color: white; }
+    .status-cancelled { background-color: #ef4444; color: white; }
+
+    .order-card {
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .order-card:hover {
+      transform: translateY(-4px);
+      border-color: #3b82f6 !important;
+      box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+    }
+
+    .modal-backdrop {
+      backdrop-filter: blur(8px);
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .loading-spinner {
+      border: 3px solid rgba(59, 130, 246, 0.3);
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      width: 3rem;
+      height: 3rem;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .orders-list-container {
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .orders-list-container.with-detail {
+      width: 50%;
+      max-width: 50%;
+      margin-left: 0;
+      margin-right: 0;
+      padding-right: 3rem;
+    }
+
+    .order-detail-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 50%;
+      height: 100vh;
+      background: linear-gradient(135deg, rgba(17, 24, 39, 0.98) 0%, rgba(31, 41, 55, 0.98) 100%);
+      border-left: 2px solid rgba(44, 82, 120, 0.5);
+      overflow-y: auto;
+      z-index: 100;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .order-detail-panel.active {
+      transform: translateX(0);
+    }
+
+    .close-detail-btn {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(44, 82, 120, 0.3);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen">
+  <nav class="sticky top-0 shadow-2xl z-50 border-b-2 border-opacity-40 backdrop-blur-xl" style="background: linear-gradient(135deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.95) 100%); border-color: #2c5278;">
+    <div class="w-full mx-auto px-6" style="max-width: 90%; margin-left: auto; margin-right: auto;">
+      <div class="flex justify-between items-center py-4">
+        <a href="index.html" class="flex items-center hover:opacity-80 transition-opacity">
+          <img src="medrunner-logo-stable-white.svg" class="h-10" alt="Medrunner Logo">
+          <span class="ml-4 text-xl font-bold text-white">Logistics Staff Control Center</span>
+        </a>
+        <a href="index.html" class="px-6 py-2 rounded-lg text-white hover:bg-gray-700 transition-all duration-300">
+          ← Back to Equipment Portal
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="orders-list-container px-6 py-8" id="orders-list-container">
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent mb-2">
+        Order Management System
+      </h1>
+      <p class="text-gray-400">Manage and track all equipment orders in real-time</p>
+    </div>
+
+    <div class="flex flex-wrap gap-4 mb-6">
+      <button onclick="switchOrderView('active')" id="btn-active-orders" class="px-6 py-3 rounded-xl font-semibold transition-all duration-300 bg-blue-600 text-white">
+        <span class="flex items-center space-x-2">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+          </svg>
+          <span>Open & Active</span>
+          <span id="active-count" class="bg-white/20 px-2 py-0.5 rounded-full text-xs">0</span>
+        </span>
+      </button>
+      <button onclick="switchOrderView('completed')" id="btn-completed-orders" class="px-6 py-3 rounded-xl font-semibold transition-all duration-300 bg-gray-700 text-gray-300 hover:bg-gray-600">
+        <span class="flex items-center space-x-2">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+          <span>Archive</span>
+          <span id="completed-count" class="bg-white/20 px-2 py-0.5 rounded-full text-xs">0</span>
+        </span>
+      </button>
+      <button onclick="refreshOrders()" class="ml-auto px-6 py-3 rounded-xl font-semibold transition-all duration-300 bg-gray-700 text-white hover:bg-gray-600 flex items-center space-x-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+        </svg>
+        <span>Refresh</span>
+      </button>
+    </div>
+
+    <div id="orders-loading" class="text-center py-20 hidden">
+      <div class="loading-spinner mx-auto mb-4"></div>
+      <p class="text-gray-400 text-lg">Loading orders...</p>
+    </div>
+
+    <div id="active-orders-container"></div>
+    <div id="completed-orders-container" class="hidden"></div>
+
+    <div id="no-orders-message" class="text-center py-20 text-gray-400 hidden">
+      <svg class="w-20 h-20 mx-auto mb-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path>
+      </svg>
+      <p class="text-2xl font-semibold mb-2">No orders found</p>
+      <p class="text-gray-500">Orders will appear here when they are submitted</p>
+    </div>
+  </div>
+
+  <!-- Order Detail Side Panel -->
+  <div id="order-detail-panel" class="order-detail-panel">
+    <div class="close-detail-btn p-4 flex items-center justify-between">
+      <h2 class="text-2xl font-bold text-white">Order Details</h2>
+      <button onclick="closeOrderDetail()" class="p-2 hover:bg-gray-700 rounded-lg transition-all">
+        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    <div id="order-detail-content" class="p-6">
+      <!-- Order details will be inserted here -->
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl transform translate-y-32 transition-all duration-300 z-50">
+    <div class="flex items-center space-x-3">
+      <svg id="toast-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"></svg>
+      <span id="toast-message" class="font-semibold"></span>
+    </div>
+  </div>
+
+  <script src="staff-control.js"></script>
+</body>
+
+</html>
+
