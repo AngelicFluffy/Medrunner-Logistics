@@ -5,7 +5,45 @@ let filteredArchivedOrders = [];
 let currentPage = 1;
 let ordersPerPage = 10;
 
+// For local testing: 'http://localhost:3000'
+// For ngrok: 'https://your-ngrok-url.ngrok.io'
+// For production: 'https://your-server.com:3000'
 const API = 'https://angla-unsanctionable-visually.ngrok-free.dev';
+
+// Medrunner Portal API integration - now using global MEDRUNNER_AUTH
+let currentUser = null;
+
+// Initialize with global auth system
+window.addEventListener('medrunnerAuthReady', (event) => {
+  currentUser = event.detail.user;
+  console.log('Staff Control: User authenticated', currentUser);
+});
+
+// Check if user is authenticated with Portal
+function isPortalAuthenticated() {
+  return window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.isAuth();
+}
+
+// Get current user info from Portal
+async function getPortalUser() {
+  if (window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.isAuth()) {
+    return window.MEDRUNNER_AUTH.getUser();
+  }
+  return null;
+}
+
+// Set Portal token (called from login page or when user provides token)
+function setPortalToken(token) {
+  localStorage.setItem('medrunnerPortalToken', token);
+}
+
+// Logout from Portal
+function logoutPortal() {
+  localStorage.removeItem('medrunnerPortalToken');
+  localStorage.removeItem('medrunnerUser');
+  currentUser = null;
+  window.location.reload();
+}
 
 const STATUS_COLORS = {
   'Received': 'status-received',
@@ -980,19 +1018,27 @@ async function claimOrderInternal(orderId, fromModal) {
   const order = allOrders.find(o => o.orderId === orderId);
   if (!order) return;
 
-  let savedUsername = localStorage.getItem('staffDiscordUsername');
-  let username = savedUsername;
+  let username;
 
-  if (!username || username.trim() === '') {
-    username = prompt('Enter your Discord username:\n\n(Note: This will be automatically filled in once the system is fully established)');
+  // Try to get username from Portal user first
+  if (currentUser && currentUser.discordUsername) {
+    username = currentUser.discordUsername;
+  } else {
+    // Fallback to saved username or prompt
+    let savedUsername = localStorage.getItem('staffDiscordUsername');
+    username = savedUsername;
 
     if (!username || username.trim() === '') {
-      showToast('Username required to claim order', 'error');
-      return;
-    }
+      username = prompt('Enter your Discord username:\n\n(Note: Login with your Medrunner Portal account to auto-fill this)');
 
-    username = username.trim();
-    localStorage.setItem('staffDiscordUsername', username);
+      if (!username || username.trim() === '') {
+        showToast('Username required to claim order', 'error');
+        return;
+      }
+
+      username = username.trim();
+      localStorage.setItem('staffDiscordUsername', username);
+    }
   }
 
   try {
@@ -1076,7 +1122,16 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+  // Try to authenticate with Portal if token exists
+  if (isPortalAuthenticated()) {
+    const user = await getPortalUser();
+    if (user) {
+      console.log('✓ Authenticated with Medrunner Portal as:', user.username);
+      // You can show user info in the UI here if desired
+    }
+  }
+
   fetchOrders();
 
   setInterval(() => {
