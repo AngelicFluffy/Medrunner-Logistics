@@ -8,6 +8,7 @@ window.MEDRUNNER_AUTH = {
   currentUser: null,
   isAuthenticated: false,
   authWindow: null,
+  refreshInterval: null,
 
   /**
    * Initialize authentication on page load
@@ -23,6 +24,9 @@ window.MEDRUNNER_AUTH = {
         this.isAuthenticated = true;
         console.log('✅ Restored authentication from localStorage:', this.currentUser.discordUsername);
         this.applyAuthState();
+
+        // Start auto-refresh for role updates
+        this.startAutoRefresh();
         return;
       } catch (error) {
         console.warn('⚠️ Failed to restore authentication:', error);
@@ -44,6 +48,9 @@ window.MEDRUNNER_AUTH = {
         // Apply authentication state
         this.applyAuthState();
 
+        // Start auto-refresh for role updates
+        this.startAutoRefresh();
+
         // Close auth window if it's still open
         if (this.authWindow && !this.authWindow.closed) {
           this.authWindow.close();
@@ -55,6 +62,100 @@ window.MEDRUNNER_AUTH = {
     // if (!this.isAuthenticated) {
     //   this.showLoginButton();
     // }
+  },
+
+  /**
+   * Start auto-refresh to keep user roles up-to-date
+   */
+  startAutoRefresh() {
+    // Clear any existing interval
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+
+    // Refresh every 30 seconds
+    this.refreshInterval = setInterval(() => {
+      this.refreshUserData();
+    }, 30000);
+
+    console.log('🔄 Auto-refresh started (30s interval)');
+  },
+
+  /**
+   * Stop auto-refresh
+   */
+  stopAutoRefresh() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+      console.log('⏹️ Auto-refresh stopped');
+    }
+  },
+
+  /**
+   * Refresh user data from server
+   */
+  async refreshUserData() {
+    if (!this.currentUser || !this.currentUser.discordId) {
+      console.warn('⚠️ Cannot refresh: No user data');
+      return;
+    }
+
+    try {
+      console.log('🔄 Refreshing user roles...');
+
+      const response = await fetch(`${this.API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          discordId: this.currentUser.discordId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to refresh user data');
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.user) {
+        // Check if roles have changed
+        const oldRoles = JSON.stringify(this.currentUser.roles || []);
+        const newRoles = JSON.stringify(data.user.roles || []);
+
+        if (oldRoles !== newRoles) {
+          console.log('🔄 User roles updated:', data.user.roles);
+
+          // Update user data while preserving other fields
+          this.currentUser = {
+            ...this.currentUser,
+            roles: data.user.roles,
+            isStaff: data.user.isStaff,
+            isLogisticsStaff: data.user.isLogisticsStaff,
+            isAcademyStaff: data.user.isAcademyStaff
+          };
+
+          // Update localStorage
+          localStorage.setItem('medrunnerUser', JSON.stringify(this.currentUser));
+
+          // Re-apply auth state to update UI
+          this.applyAuthState();
+
+          // Dispatch event for other scripts
+          window.dispatchEvent(new CustomEvent('medrunnerAuthUpdated', {
+            detail: { user: this.currentUser }
+          }));
+
+          console.log('✅ User data refreshed and UI updated');
+        } else {
+          console.log('✅ User roles unchanged');
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to refresh user data:', error);
+    }
   },
 
   /**
@@ -145,6 +246,9 @@ window.MEDRUNNER_AUTH = {
    * Logout user
    */
   logout() {
+    // Stop auto-refresh
+    this.stopAutoRefresh();
+
     this.currentUser = null;
     this.isAuthenticated = false;
     localStorage.removeItem('medrunnerUser');
@@ -283,18 +387,18 @@ window.MEDRUNNER_AUTH = {
    */
   isLogisticsStaff() {
     if (!this.currentUser) return false;
-    
-    // Check if user has staff status
-    if (this.currentUser.isStaff) return true;
-    
+
+    // Check if user has isLogisticsStaff flag (from backend)
+    if (this.currentUser.isLogisticsStaff) return true;
+
     // Check if user has logistics role
     if (this.currentUser.roles && Array.isArray(this.currentUser.roles)) {
-      const logisticsRoles = ['logistics', 'logistics staff', 'admin', 'administrator'];
-      return this.currentUser.roles.some(role => 
+      const logisticsRoles = ['logistics', 'logistics staff'];
+      return this.currentUser.roles.some(role =>
         logisticsRoles.includes(role.toLowerCase())
       );
     }
-    
+
     return false;
   },
   
