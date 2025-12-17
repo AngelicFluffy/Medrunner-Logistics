@@ -4,7 +4,7 @@
  */
 
 window.MEDRUNNER_AUTH = {
-  API_URL: 'http://localhost:3000',
+  API_URL: 'https://angla-unsanctionable-visually.ngrok-free.dev',
   currentUser: null,
   isAuthenticated: false,
   authWindow: null,
