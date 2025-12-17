@@ -8,7 +8,7 @@ let ordersPerPage = 10;
 // For local testing: 'http://localhost:3000'
 // For ngrok: 'https://your-ngrok-url.ngrok.io'
 // For production: 'https://your-server.com:3000'
-const API = 'http://localhost:3000';
+const API = 'https://angla-unsanctionable-visually.ngrok-free.dev';
 
 // Medrunner Portal API integration - now using global MEDRUNNER_AUTH
 let currentUser = null;
