@@ -10,39 +10,40 @@ let ordersPerPage = 10;
 // For production: 'https://your-server.com:3000'
 const API = 'https://angla-unsanctionable-visually.ngrok-free.dev';
 
-// Medrunner Portal API integration - now using global MEDRUNNER_AUTH
+// Discord authentication integration
 let currentUser = null;
 
 // Initialize with global auth system
 window.addEventListener('medrunnerAuthReady', (event) => {
   currentUser = event.detail.user;
   console.log('Staff Control: User authenticated', currentUser);
+
+  // Verify user has logistics staff role (ONLY logistics, not academy)
+  if (!currentUser.isLogisticsStaff) {
+    console.error('❌ User does not have logistics staff role');
+    alert('Access denied: You must be a Logistics staff member to access this page.');
+    window.location.href = 'index.html';
+  }
 });
 
-// Check if user is authenticated with Portal
-function isPortalAuthenticated() {
+// Check if user is authenticated
+function isAuthenticated() {
   return window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.isAuth();
 }
 
-// Get current user info from Portal
-async function getPortalUser() {
+// Get current user info
+function getCurrentUser() {
   if (window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.isAuth()) {
     return window.MEDRUNNER_AUTH.getUser();
   }
   return null;
 }
 
-// Set Portal token (called from login page or when user provides token)
-function setPortalToken(token) {
-  localStorage.setItem('medrunnerPortalToken', token);
-}
-
-// Logout from Portal
-function logoutPortal() {
-  localStorage.removeItem('medrunnerPortalToken');
-  localStorage.removeItem('medrunnerUser');
-  currentUser = null;
-  window.location.reload();
+// Logout
+function logout() {
+  if (window.MEDRUNNER_AUTH) {
+    window.MEDRUNNER_AUTH.logout();
+  }
 }
 
 const STATUS_COLORS = {
@@ -1123,13 +1124,26 @@ function showToast(message, type = 'info') {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-  // Try to authenticate with Portal if token exists
-  if (isPortalAuthenticated()) {
-    const user = await getPortalUser();
+  // Check if user is authenticated with Discord
+  if (isAuthenticated()) {
+    const user = getCurrentUser();
     if (user) {
-      console.log('✓ Authenticated with Medrunner Portal as:', user.username);
-      // You can show user info in the UI here if desired
+      console.log('✓ Authenticated with Discord as:', user.discordUsername);
+
+      // Verify user has logistics staff role (ONLY logistics, not academy)
+      if (!user.isLogisticsStaff) {
+        console.error('❌ User does not have logistics staff role');
+        alert('Access denied: You must be a Logistics staff member to access this page.');
+        window.location.href = 'index.html';
+        return;
+      }
     }
+  } else {
+    // Not authenticated, redirect to main page
+    console.error('❌ User not authenticated');
+    alert('Please log in with Discord to access the staff control panel.');
+    window.location.href = 'index.html';
+    return;
   }
 
   fetchOrders();
