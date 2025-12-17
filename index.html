@@ -683,6 +683,35 @@
       if (contentElement) contentElement.classList.remove('hidden');
     }
 
+    // Check if user can see a restricted item based on their roles
+    function canUserSeeItem(item) {
+      // If item has no restriction or restriction is "none", everyone can see it
+      if (!item.restriction || item.restriction.trim() === '' || item.restriction.trim().toLowerCase() === 'none') {
+        return true;
+      }
+
+      // Get current user
+      const user = window.MEDRUNNER_AUTH ? window.MEDRUNNER_AUTH.getUser() : null;
+      if (!user) {
+        // Not authenticated - hide restricted items
+        return false;
+      }
+
+      const restriction = item.restriction.trim().toLowerCase();
+
+      // Check if user has the required role
+      if (restriction === 'academy') {
+        return user.isAcademyStaff || user.roles?.includes('academy');
+      } else if (restriction === 'logistics') {
+        return user.isLogisticsStaff || user.roles?.includes('logistics');
+      } else if (restriction === 'staff') {
+        return user.isStaff;
+      }
+
+      // Unknown restriction type - hide by default
+      return false;
+    }
+
     function renderInventoryItems() {
       showLoadingScreen();
 
@@ -703,6 +732,12 @@
       const itemsByCategory = {};
 
       Object.values(window.inventoryData).forEach(item => {
+        // Filter items based on user's roles
+        if (!canUserSeeItem(item)) {
+          console.log(`Filtering out restricted item: ${item.name} (${item.restriction} restriction)`);
+          return; // Skip this item
+        }
+
         const category = item.category || 'Equipment';
         if (!itemsByCategory[category]) {
             itemsByCategory[category] = [];
@@ -746,14 +781,26 @@
                   </div>
 
                   ${item.restriction && item.restriction.trim() !== '' && item.restriction.trim().toLowerCase() !== 'none' ?
-                    `<div class="absolute bottom-0 left-0 right-0 bg-red-600 text-white px-3 py-1.5 text-xs font-bold shadow-lg z-20">
-                      <div class="flex items-center justify-center space-x-1.5">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="uppercase tracking-wide text-xs">${item.restriction} RESTRICTION</span>
-                      </div>
-                    </div>` : ''
+                    (() => {
+                      const restrictionType = item.restriction.trim().toLowerCase();
+                      let bgColor = 'bg-blue-600'; // Default blue
+                      let icon = `<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                      </svg>`;
+
+                      if (restrictionType === 'academy') {
+                        bgColor = 'bg-green-600';
+                      } else if (restrictionType === 'logistics') {
+                        bgColor = 'bg-blue-600';
+                      }
+
+                      return `<div class="absolute bottom-0 left-0 right-0 ${bgColor} text-white px-3 py-1.5 text-xs font-bold shadow-lg z-20">
+                        <div class="flex items-center justify-center space-x-1.5">
+                          ${icon}
+                          <span class="uppercase tracking-wide text-xs">${item.restriction} ACCESS</span>
+                        </div>
+                      </div>`;
+                    })() : ''
                   }
                 </div>
 
@@ -1094,7 +1141,36 @@
         console.log('✅ Staff control link shown for logistics staff');
       }
 
+      // Re-render inventory to show/hide restricted items based on user's roles
+      if (window.inventoryData) {
+        console.log('🔄 Re-rendering inventory with user roles:', user.roles);
+        renderInventoryItems();
+      }
+
       console.log('✅ User authenticated, UI updated');
+    });
+
+    // Listen for authentication updates (role changes)
+    window.addEventListener('medrunnerAuthUpdated', (event) => {
+      const user = event.detail.user;
+      console.log('🔄 User roles updated:', user.roles);
+
+      // Re-render inventory to show/hide restricted items
+      if (window.inventoryData) {
+        console.log('🔄 Re-rendering inventory after role update');
+        renderInventoryItems();
+      }
+
+      // Update staff control link visibility
+      const staffLink = document.getElementById('staff-control-link');
+      const staffDivider = document.getElementById('staff-control-divider');
+      if (user && user.isLogisticsStaff) {
+        if (staffLink) staffLink.style.display = 'block';
+        if (staffDivider) staffDivider.style.display = 'block';
+      } else {
+        if (staffLink) staffLink.style.display = 'none';
+        if (staffDivider) staffDivider.style.display = 'none';
+      }
     });
 
     window.inventoryDataLoaded = false;
