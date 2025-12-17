@@ -683,8 +683,16 @@
       if (contentElement) contentElement.classList.remove('hidden');
     }
 
+    // TOGGLE: Set to false to hide restricted items from users without access (for production)
+    const SHOW_ALL_ITEMS_FOR_DEMO = true;
+
     // Check if user can see a restricted item based on their roles
     function canUserSeeItem(item) {
+      // If demo mode is enabled, show all items
+      if (SHOW_ALL_ITEMS_FOR_DEMO) {
+        return true;
+      }
+
       // If item has no restriction or restriction is "none", everyone can see it
       if (!item.restriction || item.restriction.trim() === '' || item.restriction.trim().toLowerCase() === 'none') {
         return true;
@@ -708,7 +716,44 @@
         return user.isStaff;
       }
 
+      // Weapon restrictions - show to everyone but they need certification
+      if (restriction.includes('weapon')) {
+        return true;
+      }
+
       // Unknown restriction type - hide by default
+      return false;
+    }
+
+    // Check if user has access to a restricted item (for banner display)
+    function userHasAccessToItem(item) {
+      // If item has no restriction or restriction is "none", everyone has access
+      if (!item.restriction || item.restriction.trim() === '' || item.restriction.trim().toLowerCase() === 'none') {
+        return true;
+      }
+
+      // Get current user
+      const user = window.MEDRUNNER_AUTH ? window.MEDRUNNER_AUTH.getUser() : null;
+      if (!user) {
+        return false;
+      }
+
+      const restriction = item.restriction.trim().toLowerCase();
+
+      // Check if user has the required role
+      if (restriction === 'academy') {
+        return user.isAcademyStaff || user.roles?.includes('academy');
+      } else if (restriction === 'logistics') {
+        return user.isLogisticsStaff || user.roles?.includes('logistics');
+      } else if (restriction === 'staff') {
+        return user.isStaff;
+      }
+
+      // Weapon restrictions - user needs certification (assume they don't have it)
+      if (restriction.includes('weapon')) {
+        return false;
+      }
+
       return false;
     }
 
@@ -783,21 +828,37 @@
                   ${item.restriction && item.restriction.trim() !== '' && item.restriction.trim().toLowerCase() !== 'none' ?
                     (() => {
                       const restrictionType = item.restriction.trim().toLowerCase();
+                      const hasAccess = userHasAccessToItem(item);
                       let bgColor = 'bg-blue-600'; // Default blue
+                      let bannerText = item.restriction;
                       let icon = `<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                       </svg>`;
 
-                      if (restrictionType === 'academy') {
-                        bgColor = 'bg-green-600';
-                      } else if (restrictionType === 'logistics') {
+                      // Check if it's a weapon restriction
+                      if (restrictionType.includes('weapon')) {
+                        bgColor = 'bg-yellow-600'; // Yellow-orange for weapons
+                        bannerText = 'CERTIFICATION REQUIRED';
+                        icon = `<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>`;
+                      } else if (hasAccess) {
+                        // User has access - show blue banner with "ACCESS"
                         bgColor = 'bg-blue-600';
+                        bannerText = item.restriction + ' ACCESS';
+                      } else {
+                        // User doesn't have access - show RED banner with "RESTRICTION"
+                        bgColor = 'bg-red-600';
+                        bannerText = item.restriction + ' RESTRICTION';
+                        icon = `<svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"></path>
+                        </svg>`;
                       }
 
                       return `<div class="absolute bottom-0 left-0 right-0 ${bgColor} text-white px-3 py-1.5 text-xs font-bold shadow-lg z-20">
                         <div class="flex items-center justify-center space-x-1.5">
                           ${icon}
-                          <span class="uppercase tracking-wide text-xs">${item.restriction} ACCESS</span>
+                          <span class="uppercase tracking-wide text-xs">${bannerText}</span>
                         </div>
                       </div>`;
                     })() : ''
@@ -838,37 +899,53 @@
                              class="quantity-input w-20 px-3 py-1 bg-gray-800 border border-gray-600 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                     </div>
 
-                    ${item.category && item.category.toLowerCase() === 'kit' ?
-                      `<div class="grid grid-cols-2 gap-2">
-                        <button onclick="showKitInformation('${item.name.replace(/'/g, "\\'")}')"
-                                class="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-3 font-semibold text-xs rounded-lg transition-all duration-200 flex items-center justify-center space-x-1.5 hover:shadow-lg">
-                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"></path>
-                          </svg>
-                          <span>Kit Info</span>
-                        </button>
-                        <button onclick="addToCart('${item.name.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', this)"
-                                class="bg-green-600 hover:bg-green-700 text-white py-2.5 px-3 font-semibold text-xs rounded-lg transition-all duration-200 flex items-center justify-center space-x-1.5 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600"
+                    ${(() => {
+                      const hasAccess = userHasAccessToItem(item);
+                      const isRestricted = item.restriction && item.restriction.trim() !== '' && item.restriction.trim().toLowerCase() !== 'none';
+                      const isWeapon = isRestricted && item.restriction.trim().toLowerCase().includes('weapon');
+                      const disabled = isRestricted && !hasAccess;
+                      const disabledAttr = disabled ? 'disabled' : '';
+                      const buttonClass = disabled ? 'bg-red-600 hover:bg-red-700 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700';
+                      const restrictionText = isWeapon ? 'Certification Required' : (isRestricted ? `${item.restriction} Restriction` : '');
+                      const titleAttr = disabled ? `title="⛔ ${restrictionText} - You do not have access to requisition this item"` : '';
+
+                      if (item.category && item.category.toLowerCase() === 'kit') {
+                        return `<div class="grid grid-cols-2 gap-2">
+                          <button onclick="showKitInformation('${item.name.replace(/'/g, "\\'")}')"
+                                  class="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-3 font-semibold text-xs rounded-lg transition-all duration-200 flex items-center justify-center space-x-1.5 hover:shadow-lg">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>Kit Info</span>
+                          </button>
+                          <button onclick="addToCart('${item.name.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', this)"
+                                  class="${buttonClass} text-white py-2.5 px-3 font-semibold text-xs rounded-lg transition-all duration-200 flex items-center justify-center space-x-1.5 hover:shadow-lg disabled:opacity-75 disabled:cursor-not-allowed"
+                                  id="btn-${item.name.replace(/\s+/g, '-')}"
+                                  ${disabledAttr}
+                                  ${titleAttr}
+                                  data-item-name="${item.name.replace(/"/g, '&quot;')}"
+                                  data-has-access="${hasAccess}">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
+                            </svg>
+                            <span>Requisition</span>
+                          </button>
+                        </div>`;
+                      } else {
+                        return `<button onclick="addToCart('${item.name.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', this)"
+                                class="w-full ${buttonClass} text-white py-3 px-4 font-semibold text-sm rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 hover:shadow-lg disabled:opacity-75 disabled:cursor-not-allowed"
                                 id="btn-${item.name.replace(/\s+/g, '-')}"
-                                onmouseenter="updateButtonState(this, '${item.name}')"
-                                onmouseleave="updateButtonState(this, '${item.name}')">
-                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                ${disabledAttr}
+                                ${titleAttr}
+                                data-item-name="${item.name.replace(/"/g, '&quot;')}"
+                                data-has-access="${hasAccess}">
+                          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
                           </svg>
                           <span>Requisition</span>
-                        </button>
-                      </div>` :
-                      `<button onclick="addToCart('${item.name.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', this)"
-                              class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 font-semibold text-sm rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-green-600"
-                              id="btn-${item.name.replace(/\s+/g, '-')}"
-                              onmouseenter="updateButtonState(this, '${item.name}')"
-                              onmouseleave="updateButtonState(this, '${item.name}')">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
-                        </svg>
-                        <span>Requisition</span>
-                      </button>`
-                    }
+                        </button>`;
+                      }
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1338,12 +1415,24 @@
         return;
       }
 
+      // Check if user has access to this item
+      const inventoryItem = Object.values(window.inventoryData || {}).find(item => item.name === name);
+      if (inventoryItem && !userHasAccessToItem(inventoryItem)) {
+        const restriction = inventoryItem.restriction.trim();
+        const isWeapon = restriction.toLowerCase().includes('weapon');
+        const message = isWeapon
+          ? `⛔ Certification Required - You cannot requisition this item without proper weapon certification.`
+          : `⛔ ${restriction} Restriction - You do not have access to requisition this item.`;
+        showToast(message, 'error');
+        console.warn('Access denied for restricted item:', name, 'Restriction:', restriction);
+        return;
+      }
+
       let quantity = parseInt(quantityInput.value);
       console.log('Quantity:', quantity);
       const sanitizedName = sanitizeInput(name);
       const sanitizedFullName = sanitizeInput(fullName);
       let maxQuantity = 5;
-      const inventoryItem = Object.values(window.inventoryData || {}).find(item => item.name === name);
       if (inventoryItem) {
         const categoryLower = inventoryItem.category.toLowerCase();
         if (categoryLower === 'kit' || categoryLower === 'ship' || categoryLower === 'ship component') {
