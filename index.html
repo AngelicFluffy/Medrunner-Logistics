@@ -218,7 +218,7 @@
           </div>
 
           <p class="text-xl text-gray-300 mb-8 leading-relaxed max-w-lg">
-            For all your Equipment and supply needs.
+            For all your equipment and supply needs.
           </p>
         </div>
 
@@ -247,7 +247,7 @@
               <div class="text-sm text-gray-300">All Equipment</div>
             </div>
             <div class="text-center">
-              <div class="text-3xl font-bold text-purple-400 mb-2">48h</div>
+              <div class="text-3xl font-bold text-purple-400 mb-2">48 Hour</div>
               <div class="text-sm text-gray-300">Collection Time</div>
             </div>
             <div class="text-center">
@@ -267,7 +267,7 @@
               </div>
               <div>
                 <h3 class="font-semibold text-white">Collection</h3>
-                <p class="text-sm text-gray-400">Pyro Gateway</p>
+                <p class="text-sm text-gray-400">CRU-L1</p>
               </div>
             </div>
           </div>
@@ -436,7 +436,7 @@
         <div id="armor" class="mb-20">
           <div class="mb-8">
             <h3 class="text-3xl font-bold" style="color: #ffffff;">Armor</h3>
-            <p class="text-gray-400 mt-2">Personal Protective Equipment and armor Components</p>
+            <p class="text-gray-400 mt-2">Personal Protective Equipment and Armor Components</p>
           </div>
           <div id="armor-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6"></div>
         </div>
@@ -444,7 +444,7 @@
         <div id="items" class="mb-20">
           <div class="mb-8">
             <h3 class="text-3xl font-bold" style="color: #ffffff;">Weapons</h3>
-            <p class="text-gray-400 mt-2">Sponsered By Behring, all weapons are free of charge.</p>
+            <p class="text-gray-400 mt-2">Sponsered by Behring, all weapons are free of charge.</p>
           </div>
           <div id="items-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6"></div>
         </div>
@@ -576,7 +576,7 @@
               <div class="flex items-center">
                 <span class="text-2xl mr-3">📍</span>
                 <div>
-                  <p class="font-semibold text-white">Pyro Gateway</p>
+                  <p class="font-semibold text-white">CRU-L1</p>
                   <p class="text-sm text-gray-400">All equipment is collected from the muster point</p>
                 </div>
               </div>
@@ -607,7 +607,7 @@
         <p class="text-gray-400 text-sm mb-6">Please select your availability for collection over the next 3 days (your local time)</p>
 
         <div id="availability-slots" class="space-y-4">
-          <!-- Availability slots will be generated here -->
+          <!-- Availability slot generation -->
         </div>
       </div>
 
@@ -629,7 +629,7 @@
 
         <p class="text-xs text-gray-400 mt-4 leading-relaxed">
           Your request will be sent to logistics for processing<br>
-          📍 All equipment can be collected from Pyro Gateway
+          📍 All equipment can be collected from CRU-L1
         </p>
 
         <div id="sheets-status" class="mt-4 text-xs text-center hidden">
@@ -683,7 +683,7 @@
       if (contentElement) contentElement.classList.remove('hidden');
     }
 
-    // TOGGLE: Set to false to hide restricted items from users without access (for production)
+    // THIS IS A TOGGLE: Set to false to hide restricted items from users without access
     const SHOW_ALL_ITEMS_FOR_DEMO = true;
 
     // Check if user can see a restricted item based on their roles
@@ -770,7 +770,6 @@
       });
 
       if (!window.inventoryData) {
-        console.log('No inventory data available yet');
         return;
       }
 
@@ -779,7 +778,6 @@
       Object.values(window.inventoryData).forEach(item => {
         // Filter items based on user's roles
         if (!canUserSeeItem(item)) {
-          console.log(`Filtering out restricted item: ${item.name} (${item.restriction} restriction)`);
           return; // Skip this item
         }
 
@@ -960,8 +958,13 @@
 
     async function showKitInformation(kitName) {
       try {
-        console.log('Fetching kit information for:', kitName);
+        // Check if kit data is in cache
+        if (window.kitDataCache && window.kitDataCache[kitName]) {
+          showKitInfoModal(kitName, window.kitDataCache[kitName]);
+          return;
+        }
 
+        // If not in cache, fetch it (fallback)
         if (!window.MEDRUNNER_CONFIG || !window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL) {
           throw new Error('Medrunner configuration not loaded');
         }
@@ -978,10 +981,13 @@
           throw new Error('Kit information not found: ' + (data.message || 'Unknown error'));
         }
 
+        // Cache it for next time
+        window.kitDataCache[kitName] = data.data;
+
         showKitInfoModal(kitName, data.data);
 
       } catch (error) {
-        console.error('Error fetching kit information:', error);
+        console.error('❌ Error fetching kit information:', error);
         showToast('Kit information not available', 'error');
       }
     }
@@ -1062,11 +1068,10 @@
   <script>
     window.inventoryData = null;
     window.lastInventoryUpdate = null;
+    window.kitDataCache = {}; // Cache for kit information
 
     async function fetchInventoryData() {
       try {
-        console.log('Fetching inventory data from Medrunner Apps Script...');
-
         if (!window.MEDRUNNER_CONFIG || !window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL) {
           throw new Error('Medrunner configuration not loaded');
         }
@@ -1087,18 +1092,49 @@
           throw new Error('Apps Script returned error: ' + (data.message || 'Unknown error'));
         }
 
-        console.log('Inventory data received:', data.data);
-
         window.inventoryData = data.data.inventory;
         window.lastInventoryUpdate = new Date();
+
+        // Pre-fetch all kit information for instant display
+        await cacheAllKitData();
 
         return data.data.inventory;
 
       } catch (error) {
-        console.error('Error fetching inventory data:', error);
+        console.error('❌ Error fetching inventory data:', error);
         showToast('Failed to load inventory from system', 'error');
         return null;
       }
+    }
+
+    // Pre-fetch all kit information and cache it
+    async function cacheAllKitData() {
+      if (!window.inventoryData) return;
+
+      // Find all kit items
+      const kitItems = Object.values(window.inventoryData).filter(item =>
+        item.category && item.category.toLowerCase() === 'kit'
+      );
+
+      // Fetch kit data for all kits in parallel
+      const fetchPromises = kitItems.map(async (kit) => {
+        try {
+          const url = window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL + '?action=getKitInfo&kitName=' + encodeURIComponent(kit.name);
+          const response = await fetch(url);
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.success && data.data) {
+              window.kitDataCache[kit.name] = data.data;
+            }
+          }
+        } catch (error) {
+          console.warn(`⚠️ Failed to cache kit ${kit.name}:`, error);
+        }
+      });
+
+      // Wait for all kit data to be fetched
+      await Promise.all(fetchPromises);
     }
 
     function formatPrice(price) {
@@ -1140,24 +1176,19 @@
     }
 
     document.addEventListener('DOMContentLoaded', async function() {
-      console.log('Page loaded, initializing Medrunner Logistics system...');
-
       // Setup login button click handler
       const loginButton = document.getElementById('login-prompt');
       if (loginButton) {
         loginButton.addEventListener('click', () => {
-          console.log('Login button clicked');
           if (window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.loginWithDiscord) {
-            console.log('Calling MEDRUNNER_AUTH.loginWithDiscord()');
             window.MEDRUNNER_AUTH.loginWithDiscord();
           } else {
-            console.error('MEDRUNNER_AUTH not available:', window.MEDRUNNER_AUTH);
+            console.error('❌ MEDRUNNER_AUTH not available');
             alert('Authentication system not loaded. Please refresh the page.');
           }
         });
-        console.log('✅ Login button event listener attached');
       } else {
-        console.warn('Login button not found');
+        console.warn('⚠️ Login button not found');
       }
 
       showLoadingScreen();
@@ -1199,8 +1230,6 @@
         discordUsernameField.readOnly = true;
         discordUsernameField.style.backgroundColor = '#1a2332';
         discordUsernameField.style.cursor = 'not-allowed';
-
-        console.log('✅ Discord username auto-filled:', user.discordUsername);
       }
 
       // Show cart button, hide login prompt
@@ -1215,26 +1244,20 @@
         const staffDivider = document.getElementById('staff-control-divider');
         if (staffLink) staffLink.style.display = 'block';
         if (staffDivider) staffDivider.style.display = 'block';
-        console.log('✅ Staff control link shown for logistics staff');
       }
 
       // Re-render inventory to show/hide restricted items based on user's roles
       if (window.inventoryData) {
-        console.log('🔄 Re-rendering inventory with user roles:', user.roles);
         renderInventoryItems();
       }
-
-      console.log('✅ User authenticated, UI updated');
     });
 
     // Listen for authentication updates (role changes)
     window.addEventListener('medrunnerAuthUpdated', (event) => {
       const user = event.detail.user;
-      console.log('🔄 User roles updated:', user.roles);
 
       // Re-render inventory to show/hide restricted items
       if (window.inventoryData) {
-        console.log('🔄 Re-rendering inventory after role update');
         renderInventoryItems();
       }
 
@@ -1279,36 +1302,123 @@
 
         const slotHTML = `
           <div class="border border-gray-700 rounded-lg p-4 bg-gray-800/30">
-            <div class="flex items-center mb-3">
-              <svg class="w-5 h-5 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                </svg>
+                <div>
+                  <p class="text-white font-semibold">${dayName}</p>
+                  <p class="text-gray-400 text-xs">${dateStr}</p>
+                </div>
+              </div>
+            </div>
+            <div id="time-slots-container-${dayOffset}" class="space-y-3">
+              <!-- Time slots will be added here -->
+            </div>
+            <button onclick="addTimeSlot(${dayOffset})" class="mt-3 w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors duration-200 flex items-center justify-center">
+              <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
               </svg>
-              <div>
-                <p class="text-white font-semibold">${dayName}</p>
-                <p class="text-gray-400 text-xs">${dateStr}</p>
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs text-gray-400 mb-1">From</label>
-                <select id="availability-from-${dayOffset}" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none">
-                  <option value="">Not available</option>
-                  ${timeSlots.map(time => `<option value="${time}">${time}</option>`).join('')}
-                </select>
-              </div>
-              <div>
-                <label class="block text-xs text-gray-400 mb-1">To</label>
-                <select id="availability-to-${dayOffset}" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none">
-                  <option value="">Not available</option>
-                  ${timeSlots.map(time => `<option value="${time}">${time}</option>`).join('')}
-                </select>
-              </div>
-            </div>
+              Add Time Slot
+            </button>
           </div>
         `;
 
         container.innerHTML += slotHTML;
+
+        // Add the first time slot by default
+        addTimeSlot(dayOffset, true);
       }
+    }
+
+    // Track slot counts for each day
+    const slotCounts = [0, 0, 0];
+    const MAX_SLOTS_PER_DAY = 5;
+
+    function addTimeSlot(dayOffset, isInitial = false) {
+      const container = document.getElementById(`time-slots-container-${dayOffset}`);
+      if (!container) return;
+
+      // Check max slots limit
+      if (slotCounts[dayOffset] >= MAX_SLOTS_PER_DAY) {
+        showToast(`Maximum ${MAX_SLOTS_PER_DAY} time slots per day`, 'warning');
+        return;
+      }
+
+      const slotIndex = slotCounts[dayOffset];
+      const timeSlots = generateTimeSlots();
+      const slotId = `${dayOffset}-${slotIndex}`;
+
+      const slotHTML = `
+        <div id="slot-${slotId}" class="grid grid-cols-2 gap-3 p-3 bg-gray-700/30 rounded-lg border border-gray-600">
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">From</label>
+            <select id="availability-from-${slotId}" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" onchange="validateTimeSlot('${slotId}')">
+              <option value="">Not available</option>
+              ${timeSlots.map(time => `<option value="${time}">${time}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-400 mb-1">To</label>
+            <select id="availability-to-${slotId}" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" onchange="validateTimeSlot('${slotId}')">
+              <option value="">Not available</option>
+              ${timeSlots.map(time => `<option value="${time}">${time}</option>`).join('')}
+            </select>
+          </div>
+          ${!isInitial ? `
+          <div class="col-span-2">
+            <button onclick="removeTimeSlot(${dayOffset}, ${slotIndex})" class="w-full px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors duration-200 flex items-center justify-center">
+              <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+              </svg>
+              Remove Slot
+            </button>
+          </div>
+          ` : ''}
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', slotHTML);
+      slotCounts[dayOffset]++;
+    }
+
+    function removeTimeSlot(dayOffset, slotIndex) {
+      const slotId = `${dayOffset}-${slotIndex}`;
+      const slotElement = document.getElementById(`slot-${slotId}`);
+
+      if (slotElement) {
+        slotElement.remove();
+        slotCounts[dayOffset]--;
+      }
+    }
+
+    function validateTimeSlot(slotId) {
+      const fromSelect = document.getElementById(`availability-from-${slotId}`);
+      const toSelect = document.getElementById(`availability-to-${slotId}`);
+
+      if (!fromSelect || !toSelect) return true;
+
+      const fromValue = fromSelect.value;
+      const toValue = toSelect.value;
+
+      // If either is empty, no validation needed
+      if (!fromValue || !toValue) return true;
+
+      // Convert to minutes for comparison
+      const [fromHour, fromMin] = fromValue.split(':').map(Number);
+      const [toHour, toMin] = toValue.split(':').map(Number);
+
+      const fromMinutes = fromHour * 60 + fromMin;
+      const toMinutes = toHour * 60 + toMin;
+
+      if (toMinutes <= fromMinutes) {
+        showToast('End time must be after start time', 'error');
+        toSelect.value = '';
+        return false;
+      }
+
+      return true;
     }
 
     function getAvailabilityData() {
@@ -1316,25 +1426,29 @@
       const today = new Date();
 
       for (let dayOffset = 0; dayOffset < 3; dayOffset++) {
-        const fromSelect = document.getElementById(`availability-from-${dayOffset}`);
-        const toSelect = document.getElementById(`availability-to-${dayOffset}`);
+        // Loop through all slots for this day
+        for (let slotIndex = 0; slotIndex < slotCounts[dayOffset]; slotIndex++) {
+          const slotId = `${dayOffset}-${slotIndex}`;
+          const fromSelect = document.getElementById(`availability-from-${slotId}`);
+          const toSelect = document.getElementById(`availability-to-${slotId}`);
 
-        if (fromSelect && toSelect && fromSelect.value && toSelect.value) {
-          const date = new Date(today);
-          date.setDate(date.getDate() + dayOffset);
+          if (fromSelect && toSelect && fromSelect.value && toSelect.value) {
+            const date = new Date(today);
+            date.setDate(date.getDate() + dayOffset);
 
-          const [fromHour, fromMinute] = fromSelect.value.split(':').map(Number);
-          const fromDate = new Date(date);
-          fromDate.setHours(fromHour, fromMinute, 0, 0);
+            const [fromHour, fromMinute] = fromSelect.value.split(':').map(Number);
+            const fromDate = new Date(date);
+            fromDate.setHours(fromHour, fromMinute, 0, 0);
 
-          const [toHour, toMinute] = toSelect.value.split(':').map(Number);
-          const toDate = new Date(date);
-          toDate.setHours(toHour, toMinute, 0, 0);
+            const [toHour, toMinute] = toSelect.value.split(':').map(Number);
+            const toDate = new Date(date);
+            toDate.setHours(toHour, toMinute, 0, 0);
 
-          const fromUnix = Math.floor(fromDate.getTime() / 1000);
-          const toUnix = Math.floor(toDate.getTime() / 1000);
+            const fromUnix = Math.floor(fromDate.getTime() / 1000);
+            const toUnix = Math.floor(toDate.getTime() / 1000);
 
-          availabilityRanges.push(`${fromUnix}-${toUnix}`);
+            availabilityRanges.push(`${fromUnix}-${toUnix}`);
+          }
         }
       }
 
@@ -1403,15 +1517,11 @@
         return;
       }
 
-      console.log('addToCart called with:', name, fullName);
       const card = button.closest('.equipment-card');
-      console.log('Found card:', card);
       const quantityInput = card.querySelector('.quantity-input');
-      console.log('Found quantity input:', quantityInput);
 
       if (!quantityInput) {
-        console.error('Could not find quantity input');
-        console.error('Card HTML:', card ? card.innerHTML : 'No card found');
+        console.error('❌ Could not find quantity input for:', name);
         return;
       }
 
@@ -1429,7 +1539,6 @@
       }
 
       let quantity = parseInt(quantityInput.value);
-      console.log('Quantity:', quantity);
       const sanitizedName = sanitizeInput(name);
       const sanitizedFullName = sanitizeInput(fullName);
       let maxQuantity = 5;
@@ -1450,7 +1559,21 @@
       const existingItem = cart.find(item => item.name === sanitizedName);
 
       if (existingItem) {
-        existingItem.quantity += quantity;
+        // Check if adding would exceed max
+        const newTotal = existingItem.quantity + quantity;
+        if (newTotal > maxQuantity) {
+          const canAdd = maxQuantity - existingItem.quantity;
+          if (canAdd > 0) {
+            existingItem.quantity = maxQuantity;
+            showToast(`Added ${canAdd}x ${name} (max ${maxQuantity} reached)`, 'warning');
+          } else {
+            showToast(`Maximum ${maxQuantity} already in cart for ${name}`, 'error');
+            return;
+          }
+        } else {
+          existingItem.quantity = newTotal;
+          showToast(`Added ${quantity}x ${name} to request!`);
+        }
       } else {
         cart.push({
           name: sanitizedName,
@@ -1458,11 +1581,11 @@
           price: 'Free',
           quantity
         });
+        showToast(`Added ${quantity}x ${name} to request!`);
       }
 
       updateCartCount();
       renderCartSidebar();
-      showToast(`Added ${quantity}x ${name} to request!`);
     }
 
     function sanitizeInput(input) {
@@ -1547,12 +1670,21 @@
           }
         }
 
-        if (newQuantity > maxQuantity) {
+        // Allow decreasing even if currently above max (to fix spam bug)
+        // Only block if trying to INCREASE above max
+        if (newQuantity > maxQuantity && newQuantity > item.quantity) {
           showToast(`Maximum ${maxQuantity} allowed for ${item.name}`, 'error');
           return;
         }
 
-        cart[index].quantity = newQuantity;
+        // Update quantity - cap at max only if increasing
+        if (newQuantity > item.quantity) {
+          // Increasing - cap at max
+          cart[index].quantity = Math.min(newQuantity, maxQuantity);
+        } else {
+          // Decreasing - allow it
+          cart[index].quantity = newQuantity;
+        }
         updateCartCount();
         renderCartSidebar();
       }
@@ -1656,7 +1788,7 @@
               `).join('')}
             </div>
             <div class="border-t border-gray-600 pt-2 mt-2">
-              <p class="text-sm text-blue-300">📍 Collection: Pyro Gateway</p>
+              <p class="text-sm text-blue-300">📍 Collection:  CRU-L1</p>
             </div>
           </div>
         `;
@@ -1777,10 +1909,15 @@
 
       while (!uploadSuccess && retryCount < maxRetries) {
         try {
+          // Get Discord User ID from authenticated user
+          const currentUser = window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.getUser ? window.MEDRUNNER_AUTH.getUser() : null;
+          const discordId = currentUser && currentUser.discordId ? currentUser.discordId : '';
+
           const response = await sendToMedrunnerSystem({
             timestamp: currentTimestamp,
             date: currentDate,
             discordUsername: discordUsername.value.trim(),
+            discordId: discordId,
             items: cart.map(item => ({
               name: item.name,
               fullName: item.fullName,
@@ -1795,7 +1932,7 @@
           orderId = response.data.orderId;
           confirmationMessage = `Request ID: ${orderId}\n`;
           confirmationMessage += `Requested by: ${discordUsername.value.trim()}\n`;
-          confirmationMessage += `Collection: Pyro Gateway\n\n`;
+          confirmationMessage += `Collection: CRU-L1\n\n`;
           confirmationMessage += `Equipment Requested:\n`;
           cart.forEach((item, index) => {
             confirmationMessage += `• ${item.quantity}x ${item.name}\n`;
@@ -1965,6 +2102,7 @@
         timestamp: requestData.timestamp,
         date: requestData.date,
         discordUsername: sanitizeInput(requestData.discordUsername),
+        discordId: sanitizeInput(requestData.discordId || ''),
         items: JSON.stringify(requestData.items.map(item => ({
           name: sanitizeInput(item.name),
           fullName: sanitizeInput(item.fullName),
