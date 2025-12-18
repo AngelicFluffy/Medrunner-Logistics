@@ -1,7 +1,7 @@
 window.MEDRUNNER_CONFIG = {
   SHEET_ID: '1tk10DF0umYA8hA8QoWmLCWuRMY1cmdp7teoauq3PRPg',
 
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwa1Mk9noViIMxH2nlr9EvyWAgpouSzs1wadxxY3zkzOLZfzEMm5bsMg55P4WUTzWkuqA/exec',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwflPpOUizkJBrmi0KosYJIL_jcZCkd2tPb1ay9QjuKAK9fFpoDOmlJzSz7G9iPyfhfNg/exec',
 
   // Sheet names
   SHEETS: {
