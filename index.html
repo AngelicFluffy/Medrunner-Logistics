@@ -186,9 +186,57 @@
         font-size: 3rem;
       }
     }
+
+    /* Dev Mode Indicator */
+    .dev-mode-indicator {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 10000;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 12px;
+      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .dev-mode-indicator:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 107, 107, 0.6);
+    }
+
+    .dev-mode-indicator.active {
+      display: flex;
+    }
+
+    .dev-mode-indicator .pulse {
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
   </style>
 </head>
 <body class="text-white font-sans" style="background-color: #1f2937;">
+
+  <!-- Dev Mode Indicator -->
+  <div id="devModeIndicator" class="dev-mode-indicator" onclick="toggleDevMode()">
+    <div class="pulse"></div>
+    <span>DEV MODE</span>
+  </div>
 
   <section class="relative min-h-screen flex items-center justify-center overflow-hidden" id="hero-section">
     <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-900/30 to-gray-900"></div>
@@ -1139,6 +1187,154 @@
     </script>
 
   <script>
+    // Dev mode config - toggle with: toggleDevMode()
+    window.DEV_MODE = {
+      enabled: true,
+      allowedRoleId: '1451677364458360963',
+
+      isDevUser: function() {
+        if (!this.enabled) return false;
+
+        if (window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.currentUser) {
+          const userRoles = window.MEDRUNNER_AUTH.currentUser.roles || [];
+          if (userRoles.includes(this.allowedRoleId)) return true;
+        }
+
+        const storedUser = localStorage.getItem('medrunnerUser');
+        if (storedUser) {
+          try {
+            const user = JSON.parse(storedUser);
+            const userRoles = user.roles || [];
+            if (userRoles.includes(this.allowedRoleId)) return true;
+          } catch (e) {
+            console.error('Failed to parse stored user data:', e);
+          }
+        }
+
+        return false;
+      },
+
+      log: function(...args) {
+        if (this.isDevUser()) console.log('🔧 [DEV]', ...args);
+      },
+
+      warn: function(...args) {
+        if (this.isDevUser()) console.warn('⚠️ [DEV]', ...args);
+      },
+
+      error: function(...args) {
+        if (this.isDevUser()) console.error('❌ [DEV]', ...args);
+      },
+
+      info: function(...args) {
+        if (this.isDevUser()) console.info('ℹ️ [DEV]', ...args);
+      }
+    };
+
+    // Debug helper - run: debugDevMode()
+    window.debugDevMode = function() {
+      console.log('=== DEV MODE DEBUG INFO ===');
+      console.log('Dev Mode Enabled:', window.DEV_MODE.enabled);
+      console.log('Required Role ID:', window.DEV_MODE.allowedRoleId);
+      console.log('');
+
+      console.log('MEDRUNNER_AUTH exists:', !!window.MEDRUNNER_AUTH);
+      if (window.MEDRUNNER_AUTH) {
+        console.log('Is Authenticated:', window.MEDRUNNER_AUTH.isAuthenticated);
+        console.log('Current User:', window.MEDRUNNER_AUTH.currentUser);
+        if (window.MEDRUNNER_AUTH.currentUser) {
+          console.log('Username:', window.MEDRUNNER_AUTH.currentUser.discordUsername);
+          console.log('User Roles:', window.MEDRUNNER_AUTH.currentUser.roles);
+          console.log('Roles Type:', typeof window.MEDRUNNER_AUTH.currentUser.roles);
+          console.log('Roles is Array:', Array.isArray(window.MEDRUNNER_AUTH.currentUser.roles));
+          if (Array.isArray(window.MEDRUNNER_AUTH.currentUser.roles)) {
+            console.log('Role includes required?', window.MEDRUNNER_AUTH.currentUser.roles.includes(window.DEV_MODE.allowedRoleId));
+          }
+        }
+      }
+      console.log('');
+
+      const storedUser = localStorage.getItem('medrunnerUser');
+      console.log('LocalStorage has user:', !!storedUser);
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          console.log('Stored Username:', user.discordUsername);
+          console.log('Stored Roles:', user.roles);
+          console.log('Stored Roles Type:', typeof user.roles);
+          if (Array.isArray(user.roles)) {
+            console.log('Stored role includes required?', user.roles.includes(window.DEV_MODE.allowedRoleId));
+          }
+        } catch (e) {
+          console.error('Failed to parse stored user:', e);
+        }
+      }
+      console.log('');
+
+      console.log('Is Dev User:', window.DEV_MODE.isDevUser());
+      console.log('=========================');
+    };
+
+    // Toggle dev mode - run: toggleDevMode()
+    window.toggleDevMode = function() {
+      window.DEV_MODE.enabled = !window.DEV_MODE.enabled;
+      console.log(`🔧 Dev Mode ${window.DEV_MODE.enabled ? 'ENABLED' : 'DISABLED'}`);
+
+      const indicator = document.getElementById('devModeIndicator');
+      if (indicator) {
+        if (window.DEV_MODE.enabled && window.DEV_MODE.isDevUser()) {
+          indicator.classList.add('active');
+        } else {
+          indicator.classList.remove('active');
+        }
+      }
+
+      if (window.DEV_MODE.enabled) {
+        const currentUser = window.MEDRUNNER_AUTH?.currentUser;
+        console.log('Current user:', currentUser?.discordUsername || 'Not logged in');
+        console.log('User roles:', currentUser?.roles || []);
+        console.log('Required role ID:', window.DEV_MODE.allowedRoleId);
+        console.log('Is dev user:', window.DEV_MODE.isDevUser());
+
+        if (!window.DEV_MODE.isDevUser()) {
+          console.warn('⚠️ You do not have the required role to see dev logs');
+          console.warn('Run debugDevMode() for detailed info');
+        }
+      }
+    };
+
+    // Show indicator on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.DEV_MODE.enabled) {
+        setTimeout(() => {
+          if (window.DEV_MODE.isDevUser()) {
+            const indicator = document.getElementById('devModeIndicator');
+            if (indicator) indicator.classList.add('active');
+          }
+        }, 1000);
+      }
+    });
+
+    // Update indicator on auth ready
+    window.addEventListener('medrunnerAuthReady', function() {
+      if (window.DEV_MODE.enabled && window.DEV_MODE.isDevUser()) {
+        const indicator = document.getElementById('devModeIndicator');
+        if (indicator) indicator.classList.add('active');
+      }
+    });
+
+    // Update indicator on auth change
+    window.addEventListener('medrunnerAuthUpdated', function() {
+      const indicator = document.getElementById('devModeIndicator');
+      if (!indicator) return;
+
+      if (window.DEV_MODE.enabled && window.DEV_MODE.isDevUser()) {
+        indicator.classList.add('active');
+      } else {
+        indicator.classList.remove('active');
+      }
+    });
+
     window.inventoryData = null;
     window.lastInventoryUpdate = null;
     window.kitDataCache = {}; // Cache for kit information
@@ -1153,7 +1349,7 @@
           throw new Error('Medrunner configuration not set up. Please update medrunner-config.js');
         }
 
-        console.log('📡 Fetching inventory data...');
+        DEV_MODE.log('📡 Fetching inventory data...');
         // Use JSONP with retry to bypass CORS
         const data = await fetchWithRetry(window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL, { action: 'getInventory' });
 
@@ -1161,7 +1357,7 @@
           throw new Error('Apps Script returned error: ' + (data.message || 'Unknown error'));
         }
 
-        console.log('✅ Inventory data loaded:', Object.keys(data.data.inventory).length, 'items');
+        DEV_MODE.log('✅ Inventory data loaded:', Object.keys(data.data.inventory).length, 'items');
         window.inventoryData = data.data.inventory;
         window.lastInventoryUpdate = new Date();
 
@@ -1208,13 +1404,13 @@
 
         script.onerror = function(error) {
           cleanup();
-          console.error('JSONP script error:', error);
-          console.error('Script URL was:', script.src);
+          DEV_MODE.error('JSONP script error:', error);
+          DEV_MODE.error('Script URL was:', script.src);
           reject(new Error('JSONP request failed - check console for details'));
         };
 
         script.onload = function() {
-          console.log('✅ JSONP script loaded successfully');
+          DEV_MODE.log('✅ JSONP script loaded successfully');
         };
 
         document.body.appendChild(script);
@@ -1226,26 +1422,26 @@
       // First try JSONP
       for (let i = 0; i < maxRetries; i++) {
         try {
-          console.log(`Attempting JSONP request (attempt ${i + 1}/${maxRetries})...`);
+          DEV_MODE.log(`Attempting JSONP request (attempt ${i + 1}/${maxRetries})...`);
           const result = await fetchWithJSONP(url, params);
-          console.log('✅ JSONP request successful');
+          DEV_MODE.log('✅ JSONP request successful');
           return result;
         } catch (error) {
-          console.warn(`JSONP attempt ${i + 1} failed:`, error.message);
+          DEV_MODE.warn(`JSONP attempt ${i + 1} failed:`, error.message);
           if (i === maxRetries - 1) {
             // Last attempt - try regular fetch as fallback
             try {
-              console.log('Trying regular fetch as fallback...');
+              DEV_MODE.log('Trying regular fetch as fallback...');
               const queryParams = new URLSearchParams(params);
               const response = await fetch(`${url}?${queryParams.toString()}`);
               if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
               }
               const data = await response.json();
-              console.log('✅ Regular fetch successful');
+              DEV_MODE.log('✅ Regular fetch successful');
               return data;
             } catch (fetchError) {
-              console.error('Regular fetch also failed:', fetchError);
+              DEV_MODE.error('Regular fetch also failed:', fetchError);
               throw new Error(`All request methods failed. JSONP: ${error.message}, Fetch: ${fetchError.message}`);
             }
           }
@@ -1264,6 +1460,8 @@
         item.category && item.category.toLowerCase() === 'kit'
       );
 
+      DEV_MODE.log(`📦 Caching ${kitItems.length} kits...`);
+
       // Fetch kit data for all kits in parallel
       const fetchPromises = kitItems.map(async (kit) => {
         try {
@@ -1275,14 +1473,16 @@
 
           if (data && data.success && data.data) {
             window.kitDataCache[kit.name] = data.data;
+            DEV_MODE.log(`✅ Cached kit: ${kit.name}`);
           }
         } catch (error) {
-          console.warn(`⚠️ Failed to cache kit ${kit.name}:`, error);
+          DEV_MODE.warn(`⚠️ Failed to cache kit ${kit.name}:`, error);
         }
       });
 
       // Wait for all kit data to be fetched
       await Promise.all(fetchPromises);
+      DEV_MODE.log(`✅ Cached ${Object.keys(window.kitDataCache).length} kits total`);
     }
 
     function formatPrice(price) {
