@@ -14,22 +14,19 @@ window.MEDRUNNER_AUTH = {
    * Initialize authentication on page load
    */
   async init() {
-    console.log('🔐 Initializing Medrunner Authentication...');
-
     // Check if user is already authenticated (from localStorage)
     const storedUser = localStorage.getItem('medrunnerUser');
     if (storedUser) {
       try {
         this.currentUser = JSON.parse(storedUser);
         this.isAuthenticated = true;
-        console.log('✅ Restored authentication from localStorage:', this.currentUser.discordUsername);
         this.applyAuthState();
 
-        // Start auto-refresh for role updates
-        this.startAutoRefresh();
+        // Refresh user data on page load to get latest roles
+        this.refreshUserData();
         return;
       } catch (error) {
-        console.warn('⚠️ Failed to restore authentication:', error);
+        console.error('❌ Failed to restore authentication:', error);
         localStorage.removeItem('medrunnerUser');
       }
     }
@@ -38,7 +35,6 @@ window.MEDRUNNER_AUTH = {
     window.addEventListener('message', (event) => {
       // Security: In production, verify event.origin
       if (event.data && event.data.success && event.data.user) {
-        console.log('✅ Received authentication from OAuth:', event.data.user);
         this.currentUser = event.data.user;
         this.isAuthenticated = true;
 
@@ -48,62 +44,25 @@ window.MEDRUNNER_AUTH = {
         // Apply authentication state
         this.applyAuthState();
 
-        // Start auto-refresh for role updates
-        this.startAutoRefresh();
-
         // Close auth window if it's still open
         if (this.authWindow && !this.authWindow.closed) {
           this.authWindow.close();
         }
       }
     });
-
-    // Don't show floating login button - let the page handle login UI
-    // if (!this.isAuthenticated) {
-    //   this.showLoginButton();
-    // }
   },
 
-  /**
-   * Start auto-refresh to keep user roles up-to-date
-   */
-  startAutoRefresh() {
-    // Clear any existing interval
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-    }
 
-    // Refresh every 30 seconds
-    this.refreshInterval = setInterval(() => {
-      this.refreshUserData();
-    }, 30000);
-
-    console.log('🔄 Auto-refresh started (30s interval)');
-  },
 
   /**
-   * Stop auto-refresh
-   */
-  stopAutoRefresh() {
-    if (this.refreshInterval) {
-      clearInterval(this.refreshInterval);
-      this.refreshInterval = null;
-      console.log('⏹️ Auto-refresh stopped');
-    }
-  },
-
-  /**
-   * Refresh user data from server
+   * Refresh user data from server (called on page load)
    */
   async refreshUserData() {
     if (!this.currentUser || !this.currentUser.discordId) {
-      console.warn('⚠️ Cannot refresh: No user data');
       return;
     }
 
     try {
-      console.log('🔄 Refreshing user roles...');
-
       const response = await fetch(`${this.API_URL}/auth/refresh`, {
         method: 'POST',
         headers: {
@@ -115,7 +74,9 @@ window.MEDRUNNER_AUTH = {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to refresh user data');
+        // Don't throw error, just log warning - cached data is still valid
+        console.warn('⚠️ Could not refresh user data from server, using cached data');
+        return;
       }
 
       const data = await response.json();
@@ -126,8 +87,7 @@ window.MEDRUNNER_AUTH = {
         const newRoles = JSON.stringify(data.user.roles || []);
 
         if (oldRoles !== newRoles) {
-          console.log('🔄 User roles updated:', data.user.roles);
-
+          // console.log('✓ User roles updated from server');
           // Update user data while preserving other fields
           this.currentUser = {
             ...this.currentUser,
@@ -147,14 +107,11 @@ window.MEDRUNNER_AUTH = {
           window.dispatchEvent(new CustomEvent('medrunnerAuthUpdated', {
             detail: { user: this.currentUser }
           }));
-
-          console.log('✅ User data refreshed and UI updated');
-        } else {
-          console.log('✅ User roles unchanged');
         }
       }
     } catch (error) {
-      console.warn('⚠️ Failed to refresh user data:', error);
+      // Non-critical error - just log as warning
+      console.warn('⚠️ Could not refresh user data:', error.message);
     }
   },
 
@@ -216,16 +173,12 @@ window.MEDRUNNER_AUTH = {
    * Open Discord OAuth login window
    */
   loginWithDiscord() {
-    console.log('🔐 Opening Discord OAuth login...');
-    console.log('API URL:', this.API_URL);
-
     const width = 500;
     const height = 700;
     const left = (screen.width / 2) - (width / 2);
     const top = (screen.height / 2) - (height / 2);
 
     const authUrl = `${this.API_URL}/auth/discord`;
-    console.log('Opening URL:', authUrl);
 
     this.authWindow = window.open(
       authUrl,
@@ -237,8 +190,6 @@ window.MEDRUNNER_AUTH = {
     if (!this.authWindow || this.authWindow.closed || typeof this.authWindow.closed === 'undefined') {
       console.error('❌ Popup blocked! Please allow popups for this site.');
       alert('Popup blocked! Please allow popups for this site and try again.');
-    } else {
-      console.log('✅ Popup opened successfully');
     }
   },
 
@@ -246,13 +197,9 @@ window.MEDRUNNER_AUTH = {
    * Logout user
    */
   logout() {
-    // Stop auto-refresh
-    this.stopAutoRefresh();
-
     this.currentUser = null;
     this.isAuthenticated = false;
     localStorage.removeItem('medrunnerUser');
-    console.log('👋 Logged out');
 
     // Remove login button if it exists
     const loginBtn = document.getElementById('medrunner-login-btn');
@@ -263,17 +210,14 @@ window.MEDRUNNER_AUTH = {
     // Reload page
     window.location.reload();
   },
-  
+
   /**
    * Apply authentication state to the current page
    */
   applyAuthState() {
     if (!this.isAuthenticated || !this.currentUser) {
-      console.log('⚠️ Not authenticated, skipping auth state application');
       return;
     }
-
-    console.log('🎨 Applying authentication state to page...');
 
     // Remove login button
     const loginBtn = document.getElementById('medrunner-login-btn');
@@ -350,34 +294,41 @@ window.MEDRUNNER_AUTH = {
    */
   autoFillDiscordUsername() {
     const discordUsernameField = document.getElementById('discord-username');
-    
+
     if (discordUsernameField && this.currentUser.discordUsername) {
       discordUsernameField.value = this.currentUser.discordUsername;
-      console.log('✅ Auto-filled Discord username:', this.currentUser.discordUsername);
-      
+
       // Make it readonly to prevent changes
       discordUsernameField.setAttribute('readonly', 'readonly');
       discordUsernameField.style.backgroundColor = '#1a2332';
       discordUsernameField.style.cursor = 'not-allowed';
     }
   },
-  
+
   /**
    * Show/hide staff control navigation based on user role
    */
   toggleStaffNavigation() {
     const staffNavLink = document.querySelector('a[href="staff-control.html"]');
-    
+    const myOrdersLink = document.querySelector('a[href="my-orders.html"]');
+    const staffDivider = document.getElementById('staff-control-divider');
+
+    // Show My Orders link for all authenticated users
+    if (myOrdersLink) {
+      myOrdersLink.style.display = 'block';
+    }
+
+    // Show staff control link only for logistics staff
     if (staffNavLink) {
       // Check if user is logistics staff
       const isLogisticsStaff = this.isLogisticsStaff();
-      
+
       if (isLogisticsStaff) {
-        staffNavLink.style.display = 'flex';
-        console.log('✅ Staff navigation visible (user is logistics staff)');
+        staffNavLink.style.display = 'block';
+        if (staffDivider) staffDivider.style.display = 'block';
       } else {
         staffNavLink.style.display = 'none';
-        console.log('⚠️ Staff navigation hidden (user is not logistics staff)');
+        if (staffDivider) staffDivider.style.display = 'none';
       }
     }
   },
@@ -423,4 +374,3 @@ if (document.readyState === 'loading') {
 } else {
   window.MEDRUNNER_AUTH.init();
 }
-
