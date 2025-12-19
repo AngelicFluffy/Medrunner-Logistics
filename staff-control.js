@@ -1161,4 +1161,3 @@ document.addEventListener('keydown', function(e) {
     closeOrderDetail();
   }
 });
-
