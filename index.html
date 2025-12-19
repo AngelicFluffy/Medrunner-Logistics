@@ -1044,8 +1044,8 @@
           throw new Error('Medrunner configuration not loaded');
         }
 
-        // Use JSONP to bypass CORS
-        const data = await fetchWithJSONP(window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL, {
+        // Use JSONP with retry to bypass CORS
+        const data = await fetchWithRetry(window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL, {
           action: 'getKitInfo',
           kitName: kitName
         });
@@ -1153,13 +1153,15 @@
           throw new Error('Medrunner configuration not set up. Please update medrunner-config.js');
         }
 
-        // Use JSONP to bypass CORS
-        const data = await fetchWithJSONP(window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL, { action: 'getInventory' });
+        console.log('📡 Fetching inventory data...');
+        // Use JSONP with retry to bypass CORS
+        const data = await fetchWithRetry(window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL, { action: 'getInventory' });
 
         if (!data || !data.success) {
           throw new Error('Apps Script returned error: ' + (data.message || 'Unknown error'));
         }
 
+        console.log('✅ Inventory data loaded:', Object.keys(data.data.inventory).length, 'items');
         window.inventoryData = data.data.inventory;
         window.lastInventoryUpdate = new Date();
 
@@ -1179,10 +1181,23 @@
     function fetchWithJSONP(url, params = {}) {
       return new Promise((resolve, reject) => {
         const callbackName = 'jsonp_callback_' + Math.random().toString(36).substr(2, 9);
+        const timeoutId = setTimeout(() => {
+          cleanup();
+          reject(new Error('JSONP request timeout'));
+        }, 30000); // 30 second timeout
+
+        function cleanup() {
+          clearTimeout(timeoutId);
+          if (window[callbackName]) {
+            delete window[callbackName];
+          }
+          if (script && script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+        }
 
         window[callbackName] = function(data) {
-          delete window[callbackName];
-          document.body.removeChild(script);
+          cleanup();
           resolve(data);
         };
 
@@ -1191,14 +1206,53 @@
         queryParams.append('callback', callbackName);
         script.src = `${url}?${queryParams.toString()}`;
 
-        script.onerror = function() {
-          delete window[callbackName];
-          document.body.removeChild(script);
-          reject(new Error('JSONP request failed'));
+        script.onerror = function(error) {
+          cleanup();
+          console.error('JSONP script error:', error);
+          console.error('Script URL was:', script.src);
+          reject(new Error('JSONP request failed - check console for details'));
+        };
+
+        script.onload = function() {
+          console.log('✅ JSONP script loaded successfully');
         };
 
         document.body.appendChild(script);
       });
+    }
+
+    // Fallback fetch with retry logic
+    async function fetchWithRetry(url, params = {}, maxRetries = 2) {
+      // First try JSONP
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          console.log(`Attempting JSONP request (attempt ${i + 1}/${maxRetries})...`);
+          const result = await fetchWithJSONP(url, params);
+          console.log('✅ JSONP request successful');
+          return result;
+        } catch (error) {
+          console.warn(`JSONP attempt ${i + 1} failed:`, error.message);
+          if (i === maxRetries - 1) {
+            // Last attempt - try regular fetch as fallback
+            try {
+              console.log('Trying regular fetch as fallback...');
+              const queryParams = new URLSearchParams(params);
+              const response = await fetch(`${url}?${queryParams.toString()}`);
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              const data = await response.json();
+              console.log('✅ Regular fetch successful');
+              return data;
+            } catch (fetchError) {
+              console.error('Regular fetch also failed:', fetchError);
+              throw new Error(`All request methods failed. JSONP: ${error.message}, Fetch: ${fetchError.message}`);
+            }
+          }
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
+      }
     }
 
     // Pre-fetch all kit information and cache it
@@ -1213,8 +1267,8 @@
       // Fetch kit data for all kits in parallel
       const fetchPromises = kitItems.map(async (kit) => {
         try {
-          // Use JSONP to bypass CORS
-          const data = await fetchWithJSONP(window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL, {
+          // Use JSONP with retry to bypass CORS
+          const data = await fetchWithRetry(window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL, {
             action: 'getKitInfo',
             kitName: kit.name
           });
@@ -2261,8 +2315,8 @@
       // Only log in development mode - comment out for production
       // console.log('Sending equipment request:', secureRequestData.orderId);
 
-      // Use JSONP to bypass CORS
-      const jsonResult = await fetchWithJSONP(APPS_SCRIPT_URL, secureRequestData);
+      // Use JSONP with retry to bypass CORS
+      const jsonResult = await fetchWithRetry(APPS_SCRIPT_URL, secureRequestData);
 
       if (!jsonResult.success) {
         console.error('❌ Server returned error:', jsonResult.message);
