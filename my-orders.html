@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Orders - Medrunner Logistics</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="medrunner-config.js"></script>
+  <script src="medrunner-auth.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .professional-card {
+      background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(29, 39, 53, 0.9) 100%);
+      border: 1px solid rgba(44, 82, 120, 0.25);
+      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .professional-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(44, 82, 120, 0.5), transparent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .professional-card:hover {
+      border-color: rgba(44, 82, 120, 0.5);
+      box-shadow: 0 10px 40px rgba(44, 82, 120, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .professional-card:hover::before {
+      opacity: 1;
+    }
+
+    .professional-card.active {
+      border-color: rgba(59, 130, 246, 0.6);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    .professional-card.active::before {
+      opacity: 1;
+      background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.8), transparent);
+    }
+
+    /* Ready to Collect Glow Effect */
+    .ready-to-collect-glow {
+      border-color: rgba(34, 197, 94, 0.6) !important;
+      box-shadow:
+        0 0 20px rgba(34, 197, 94, 0.3),
+        0 0 40px rgba(34, 197, 94, 0.2),
+        0 10px 40px rgba(34, 197, 94, 0.15);
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    .ready-to-collect-glow::before {
+      opacity: 1 !important;
+      background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.8), transparent);
+      animation: shimmer 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% {
+        box-shadow:
+          0 0 20px rgba(34, 197, 94, 0.3),
+          0 0 40px rgba(34, 197, 94, 0.2),
+          0 10px 40px rgba(34, 197, 94, 0.15);
+      }
+      50% {
+        box-shadow:
+          0 0 30px rgba(34, 197, 94, 0.4),
+          0 0 60px rgba(34, 197, 94, 0.3),
+          0 10px 50px rgba(34, 197, 94, 0.2);
+      }
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
+    .ready-to-collect-glow:hover {
+      border-color: rgba(34, 197, 94, 0.8) !important;
+      box-shadow:
+        0 0 30px rgba(34, 197, 94, 0.4),
+        0 0 60px rgba(34, 197, 94, 0.3),
+        0 15px 50px rgba(34, 197, 94, 0.25);
+    }
+
+    .status-badge {
+      padding: 0.375rem 0.875rem;
+      border-radius: 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.075em;
+      border: 1px solid;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .status-received {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+    .status-claimed {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+      border-color: rgba(251, 191, 36, 0.3);
+    }
+    .status-processing {
+      background: rgba(168, 85, 247, 0.15);
+      color: #a855f7;
+      border-color: rgba(168, 85, 247, 0.3);
+    }
+    .status-ready {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+    .status-completed {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+    .status-cancelled {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    /* Status Icon Styles */
+    .status-icon {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 200px;
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 1;
+      filter: grayscale(0%);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .professional-card:hover .status-icon {
+      opacity: 0.12;
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    /* Smaller icons for completed orders */
+    .completed-order-card .status-icon {
+      width: 140px;
+      height: 140px;
+    }
+
+    .completed-order-card:hover .status-icon {
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+
+    /* Adjust icon color/tint based on status using CSS filters */
+    .professional-card:has(.status-received) .status-icon {
+      filter: brightness(0) saturate(100%) invert(64%) sepia(98%) saturate(2270%) hue-rotate(197deg) brightness(102%) contrast(96%);
+      opacity: 0.12;
+    }
+
+    .professional-card:has(.status-claimed) .status-icon,
+    .professional-card:has(.status-processing) .status-icon {
+      filter: brightness(0) saturate(100%) invert(51%) sepia(98%) saturate(2270%) hue-rotate(240deg) brightness(102%) contrast(96%);
+      opacity: 0.12;
+    }
+
+    .professional-card:has(.status-ready) .status-icon {
+      filter: brightness(0) saturate(100%) invert(64%) sepia(98%) saturate(2270%) hue-rotate(90deg) brightness(102%) contrast(96%);
+      opacity: 0.12;
+    }
+
+    .professional-card:has(.status-completed) .status-icon {
+      filter: brightness(0) saturate(100%) invert(64%) sepia(98%) saturate(2270%) hue-rotate(90deg) brightness(102%) contrast(96%);
+      opacity: 0.12;
+    }
+
+    .professional-card:has(.status-cancelled) .status-icon {
+      filter: brightness(0) saturate(100%) invert(44%) sepia(98%) saturate(2270%) hue-rotate(340deg) brightness(102%) contrast(96%);
+      opacity: 0.12;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Navigation -->
+  <nav class="sticky top-0 shadow-2xl z-50 border-b-2 border-opacity-40 backdrop-blur-xl" style="background: linear-gradient(135deg, rgba(31, 41, 55, 0.95) 0%, rgba(17, 24, 39, 0.95) 100%); border-color: #2c5278;">
+    <div class="w-full mx-auto px-6" style="max-width: 90%; margin-left: auto; margin-right: auto;">
+      <div class="flex justify-between items-center py-4">
+        <a href="index.html" class="flex items-center hover:opacity-80 transition-opacity">
+          <img src="medrunner-logo-stable-white.svg" class="h-10" alt="Medrunner Logo">
+          <span class="ml-4 text-xl font-bold text-white">My Orders</span>
+        </a>
+        <div class="flex items-center space-x-4">
+          <!-- User info - Populated by medrunner-auth.js when authenticated -->
+          <div id="nav-user-info" style="display: none;"></div>
+          <a href="index.html" class="px-6 py-2 rounded-lg text-white hover:bg-gray-700 transition-all duration-300">
+            ← Back to Equipment Portal
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-6 py-8" style="max-width: 90%;">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent mb-2">
+        My Orders
+      </h1>
+      <p class="text-gray-400">View and manage your equipment requests</p>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Left Side - Orders List -->
+      <div class="lg:col-span-1">
+        <!-- Loading State -->
+        <div id="loading-container" class="text-center py-20">
+          <div class="inline-flex flex-col items-center space-y-6">
+            <div class="relative">
+              <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            </div>
+            <div class="space-y-2">
+              <h3 class="text-xl font-semibold text-white">Loading Your Orders</h3>
+              <p class="text-gray-400">Please wait...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders Container -->
+        <div id="orders-container" class="hidden space-y-4">
+          <!-- Orders will be populated here -->
+        </div>
+
+        <!-- No Orders Message -->
+        <div id="no-orders-message" class="hidden text-center py-20">
+          <svg class="w-20 h-20 mx-auto mb-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+            <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path>
+          </svg>
+          <p class="text-2xl font-semibold mb-2 text-gray-300">No orders yet</p>
+          <p class="text-gray-500 mb-6">You haven't placed any equipment requests</p>
+          <a href="index.html" class="inline-block px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105">
+            Browse Equipment
+          </a>
+        </div>
+      </div>
+
+      <!-- Right Side - Order Details -->
+      <div class="lg:col-span-2">
+        <!-- Empty State for Right Panel -->
+        <div id="order-details-empty" class="sticky top-4">
+          <div class="bg-gradient-to-br from-gray-900/50 to-gray-800/50 rounded-3xl border border-gray-700/30 p-12 text-center">
+            <svg class="w-20 h-20 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <h3 class="text-xl font-semibold text-gray-400 mb-2">Select an Order</h3>
+            <p class="text-gray-500">Click on an order to view details and messages</p>
+          </div>
+        </div>
+
+        <!-- Order Details Panel -->
+        <div id="order-details-panel" class="hidden sticky top-4">
+          <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl border border-gray-600/50 overflow-hidden">
+            <!-- Panel Header -->
+            <div class="flex justify-between items-center p-6 border-b border-gray-600/50 bg-gradient-to-r from-blue-600/10 to-purple-600/10">
+              <div>
+                <h2 id="order-details-title" class="text-2xl font-bold text-white">Order Details</h2>
+                <p id="order-details-subtitle" class="text-gray-400 text-sm mt-1"></p>
+              </div>
+              <button onclick="closeOrderDetailsPanel()" class="text-gray-400 hover:text-white text-3xl font-light transition-colors hover:bg-gray-700/50 rounded-full w-10 h-10 flex items-center justify-center">&times;</button>
+            </div>
+
+            <!-- Panel Content -->
+            <div class="p-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+              <!-- Order Info -->
+              <div id="order-details-info" class="mb-6">
+                <!-- Will be populated dynamically -->
+              </div>
+
+              <!-- Thread Messages -->
+              <div class="border-t border-gray-700 pt-6">
+                <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+                  <svg class="w-5 h-5 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path>
+                  </svg>
+                  Order Thread
+                </h3>
+
+                <!-- Messages Container -->
+                <div id="thread-messages" class="space-y-4 mb-4 max-h-96 overflow-y-auto bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
+                  <div class="text-center text-gray-400 py-8">
+                    <svg class="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                    <p>Loading messages...</p>
+                  </div>
+                </div>
+
+                <!-- Send Message Form -->
+                <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+                  <label class="block text-sm font-semibold text-gray-300 mb-2">Send a message to logistics staff:</label>
+                  <div class="flex space-x-2">
+                    <textarea id="thread-message-input" rows="2" placeholder="Type your message here..." class="flex-1 px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                    <button onclick="sendThreadMessage()" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2">
+                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                      </svg>
+                      <span>Send</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-notification" class="fixed top-6 right-6 px-6 py-4 rounded-xl shadow-2xl transform translate-x-full opacity-0 transition-all duration-300 z-50 backdrop-blur-md border border-opacity-30 max-w-sm" style="background-color: #2c5278; color: #ffffff; border-color: #1e3a5f;">
+    <div class="flex items-center space-x-3">
+      <div class="flex-shrink-0">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+        </svg>
+      </div>
+      <span id="toast-message" class="font-semibold">Success!</span>
+    </div>
+  </div>
+
+  <script src="my-orders.js"></script>
+</body>
+</html>
+
