@@ -358,6 +358,17 @@
           <!-- Staff Control Link - Only visible for logistics staff -->
           <div id="staff-control-divider" class="h-8 w-px bg-gray-600 mx-2" style="display: none;"></div>
 
+          <!-- My Orders Link - Only visible when logged in -->
+          <a id="my-orders-link" href="my-orders.html" class="nav-link px-6 py-3 font-semibold text-base transition-all duration-300 text-white hover:text-blue-300" style="display: none;">
+            <span class="flex items-center space-x-2">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9 4a1 1 0 10-2 0v2H9a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V9z" clip-rule="evenodd"></path>
+              </svg>
+              <span>My Orders</span>
+            </span>
+          </a>
+
           <a id="staff-control-link" href="staff-control.html" class="nav-link px-6 py-3 font-semibold text-base transition-all duration-300 text-white hover:text-blue-300" style="display: none;">
             <span class="flex items-center space-x-2">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -393,6 +404,7 @@
       </ul>
     </div>
   </nav>
+
   <section id="individual-items" class="py-20 px-4" style="background-color: #1f2937;">
     <div class="w-full mx-auto" style="max-width: 80%; margin-left: auto; margin-right: auto;">
       <div class="section-header text-center mb-16">
@@ -533,6 +545,62 @@
     </div>
   </div>
 
+  <!-- Order Details Modal -->
+  <div id="order-details-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl border border-gray-600/50 w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center p-6 border-b border-gray-600/50 bg-gradient-to-r from-blue-600/10 to-purple-600/10">
+        <div>
+          <h2 id="order-details-title" class="text-2xl font-bold text-white">Order Details</h2>
+          <p id="order-details-subtitle" class="text-gray-400 text-sm mt-1"></p>
+        </div>
+        <button onclick="closeOrderDetailsModal()" class="text-gray-400 hover:text-white text-3xl font-light transition-colors hover:bg-gray-700/50 rounded-full w-10 h-10 flex items-center justify-center">&times;</button>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+        <!-- Order Info -->
+        <div id="order-details-info" class="mb-6">
+          <!-- Will be populated dynamically -->
+        </div>
+
+        <!-- Thread Messages -->
+        <div class="border-t border-gray-700 pt-6">
+          <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"></path>
+            </svg>
+            Order Thread
+          </h3>
+
+          <!-- Messages Container -->
+          <div id="thread-messages" class="space-y-4 mb-4 max-h-96 overflow-y-auto bg-gray-800/30 rounded-xl p-4 border border-gray-700/50">
+            <div class="text-center text-gray-400 py-8">
+              <svg class="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+              </svg>
+              <p>Loading messages...</p>
+            </div>
+          </div>
+
+          <!-- Send Message Form -->
+          <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+            <label class="block text-sm font-semibold text-gray-300 mb-2">Send a message to logistics staff:</label>
+            <div class="flex space-x-2">
+              <textarea id="thread-message-input" rows="2" placeholder="Type your message here..." class="flex-1 px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+              <button onclick="sendThreadMessage()" class="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+                </svg>
+                <span>Send</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Request Sidebar -->
   <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-96 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 overflow-y-auto border-l border-opacity-30 backdrop-blur-md" style="background-color: rgba(31, 41, 55, 0.95); border-color: #2c5278;">
     <div class="p-6">
@@ -602,13 +670,20 @@
           <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
           </svg>
-          Collection Availability
+          Collection Availability *
         </h3>
-        <p class="text-gray-400 text-sm mb-6">Please select your availability for collection over the next 3 days (your local time)</p>
+        <p class="text-gray-400 text-sm mb-6">Select at least 2 time slots when you're available for collection (your local time)</p>
 
         <div id="availability-slots" class="space-y-4">
           <!-- Availability slot generation -->
         </div>
+
+        <button onclick="addAvailabilitySlot()" class="mt-4 w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all duration-300 flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+          </svg>
+          Add Time Slot
+        </button>
       </div>
 
       <div class="text-center mb-6">
@@ -1238,6 +1313,10 @@
       if (cartButton) cartButton.style.display = 'flex';
       if (loginPrompt) loginPrompt.style.display = 'none';
 
+      // Show My Orders link when logged in
+      const myOrdersLink = document.getElementById('my-orders-link');
+      if (myOrdersLink) myOrdersLink.style.display = 'block';
+
       // Show staff control link if user is logistics staff
       if (user && user.isLogisticsStaff) {
         const staffLink = document.getElementById('staff-control-link');
@@ -1259,6 +1338,14 @@
       // Re-render inventory to show/hide restricted items
       if (window.inventoryData) {
         renderInventoryItems();
+      }
+
+      // Update My Orders link visibility
+      const myOrdersLink = document.getElementById('my-orders-link');
+      if (user && user.discordId) {
+        if (myOrdersLink) myOrdersLink.style.display = 'block';
+      } else {
+        if (myOrdersLink) myOrdersLink.style.display = 'none';
       }
 
       // Update staff control link visibility
@@ -1286,173 +1373,204 @@
       return slots;
     }
 
+    // Track availability slots
+    let availabilitySlotCount = 0;
+    const MAX_AVAILABILITY_SLOTS = 5;
+
     function generateAvailabilitySlots() {
       const container = document.getElementById('availability-slots');
       if (!container) return;
 
-      const timeSlots = generateTimeSlots();
-      const today = new Date();
-
-      for (let dayOffset = 0; dayOffset < 3; dayOffset++) {
-        const date = new Date(today);
-        date.setDate(date.getDate() + dayOffset);
-
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-        const slotHTML = `
-          <div class="border border-gray-700 rounded-lg p-4 bg-gray-800/30">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center">
-                <svg class="w-5 h-5 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
-                </svg>
-                <div>
-                  <p class="text-white font-semibold">${dayName}</p>
-                  <p class="text-gray-400 text-xs">${dateStr}</p>
-                </div>
-              </div>
-            </div>
-            <div id="time-slots-container-${dayOffset}" class="space-y-3">
-              <!-- Time slots will be added here -->
-            </div>
-            <button onclick="addTimeSlot(${dayOffset})" class="mt-3 w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors duration-200 flex items-center justify-center">
-              <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-              </svg>
-              Add Time Slot
-            </button>
-          </div>
-        `;
-
-        container.innerHTML += slotHTML;
-
-        // Add the first time slot by default
-        addTimeSlot(dayOffset, true);
-      }
+      // Add 2 initial slots
+      addAvailabilitySlot();
+      addAvailabilitySlot();
     }
 
-    // Track slot counts for each day
-    const slotCounts = [0, 0, 0];
-    const MAX_SLOTS_PER_DAY = 5;
-
-    function addTimeSlot(dayOffset, isInitial = false) {
-      const container = document.getElementById(`time-slots-container-${dayOffset}`);
+    function addAvailabilitySlot() {
+      const container = document.getElementById('availability-slots');
       if (!container) return;
 
-      // Check max slots limit
-      if (slotCounts[dayOffset] >= MAX_SLOTS_PER_DAY) {
-        showToast(`Maximum ${MAX_SLOTS_PER_DAY} time slots per day`, 'warning');
+      if (availabilitySlotCount >= MAX_AVAILABILITY_SLOTS) {
+        showToast(`We probably won't need more than ${MAX_AVAILABILITY_SLOTS} time slots to reach you!`, 'info');
         return;
       }
 
-      const slotIndex = slotCounts[dayOffset];
+      const slotIndex = availabilitySlotCount;
       const timeSlots = generateTimeSlots();
-      const slotId = `${dayOffset}-${slotIndex}`;
+      const today = new Date();
+
+      // Generate date options for next 7 days
+      let dateOptions = '';
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() + i);
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const dateValue = date.toISOString().split('T')[0];
+        dateOptions += `<option value="${dateValue}">${dayName}, ${dateStr}</option>`;
+      }
 
       const slotHTML = `
-        <div id="slot-${slotId}" class="grid grid-cols-2 gap-3 p-3 bg-gray-700/30 rounded-lg border border-gray-600">
-          <div>
-            <label class="block text-xs text-gray-400 mb-1">From</label>
-            <select id="availability-from-${slotId}" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" onchange="validateTimeSlot('${slotId}')">
-              <option value="">Not available</option>
-              ${timeSlots.map(time => `<option value="${time}">${time}</option>`).join('')}
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-gray-400 mb-1">To</label>
-            <select id="availability-to-${slotId}" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" onchange="validateTimeSlot('${slotId}')">
-              <option value="">Not available</option>
-              ${timeSlots.map(time => `<option value="${time}">${time}</option>`).join('')}
-            </select>
-          </div>
-          ${!isInitial ? `
-          <div class="col-span-2">
-            <button onclick="removeTimeSlot(${dayOffset}, ${slotIndex})" class="w-full px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors duration-200 flex items-center justify-center">
-              <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+        <div id="availability-slot-${slotIndex}" class="border border-gray-700 rounded-xl p-4 bg-gray-800/30">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center">
+              <svg class="w-5 h-5 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
               </svg>
-              Remove Slot
-            </button>
+              <span class="text-white font-semibold">Time Slot ${slotIndex + 1}</span>
+            </div>
+            ${slotIndex >= 2 ? `
+              <button onclick="removeAvailabilitySlot(${slotIndex})" class="text-red-400 hover:text-red-300 transition-colors">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+            ` : ''}
           </div>
-          ` : ''}
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs text-gray-400 mb-2">Date</label>
+              <select id="availability-date-${slotIndex}" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:outline-none">
+                ${dateOptions}
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-gray-400 mb-2">From Time</label>
+                <select id="availability-from-${slotIndex}" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:outline-none" onchange="validateAvailabilitySlot(${slotIndex})">
+                  <option value="">Select time</option>
+                  <option value="all-day">All Day</option>
+                  ${timeSlots.map(time => `<option value="${time}">${time}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 mb-2">To Time</label>
+                <select id="availability-to-${slotIndex}" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:outline-none" onchange="validateAvailabilitySlot(${slotIndex})">
+                  <option value="">Select time</option>
+                  <option value="all-day">All Day</option>
+                  ${timeSlots.map(time => `<option value="${time}">${time}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       `;
 
       container.insertAdjacentHTML('beforeend', slotHTML);
-      slotCounts[dayOffset]++;
-    }
+      availabilitySlotCount++;
 
-    function removeTimeSlot(dayOffset, slotIndex) {
-      const slotId = `${dayOffset}-${slotIndex}`;
-      const slotElement = document.getElementById(`slot-${slotId}`);
+      // Add event listener for "All Day" selection
+      const fromSelect = document.getElementById(`availability-from-${slotIndex}`);
+      const toSelect = document.getElementById(`availability-to-${slotIndex}`);
 
-      if (slotElement) {
-        slotElement.remove();
-        slotCounts[dayOffset]--;
+      if (fromSelect && toSelect) {
+        fromSelect.addEventListener('change', function() {
+          if (this.value === 'all-day') {
+            toSelect.value = 'all-day';
+            toSelect.disabled = true;
+          } else {
+            toSelect.disabled = false;
+          }
+        });
       }
     }
 
-    function validateTimeSlot(slotId) {
-      const fromSelect = document.getElementById(`availability-from-${slotId}`);
-      const toSelect = document.getElementById(`availability-to-${slotId}`);
+    function removeAvailabilitySlot(slotIndex) {
+      const slotElement = document.getElementById(`availability-slot-${slotIndex}`);
+      if (slotElement) {
+        slotElement.remove();
+      }
+    }
+
+    function validateAvailabilitySlot(slotIndex) {
+      const fromSelect = document.getElementById(`availability-from-${slotIndex}`);
+      const toSelect = document.getElementById(`availability-to-${slotIndex}`);
 
       if (!fromSelect || !toSelect) return true;
 
       const fromValue = fromSelect.value;
       const toValue = toSelect.value;
 
-      // If either is empty, no validation needed
-      if (!fromValue || !toValue) return true;
+      // If "All Day" is selected, both should be "all-day"
+      if (fromValue === 'all-day' || toValue === 'all-day') {
+        return true;
+      }
 
-      // Convert to minutes for comparison
-      const [fromHour, fromMin] = fromValue.split(':').map(Number);
-      const [toHour, toMin] = toValue.split(':').map(Number);
+      // If both are selected, validate that "to" is after "from"
+      if (fromValue && toValue) {
+        const fromTime = new Date(`2000-01-01 ${fromValue}`);
+        const toTime = new Date(`2000-01-01 ${toValue}`);
 
-      const fromMinutes = fromHour * 60 + fromMin;
-      const toMinutes = toHour * 60 + toMin;
-
-      if (toMinutes <= fromMinutes) {
-        showToast('End time must be after start time', 'error');
-        toSelect.value = '';
-        return false;
+        if (toTime <= fromTime) {
+          showToast('End time must be after start time', 'error');
+          toSelect.value = '';
+          return false;
+        }
       }
 
       return true;
     }
 
+
+
     function getAvailabilityData() {
       const availabilityRanges = [];
-      const today = new Date();
+      let validSlotCount = 0;
 
-      for (let dayOffset = 0; dayOffset < 3; dayOffset++) {
-        // Loop through all slots for this day
-        for (let slotIndex = 0; slotIndex < slotCounts[dayOffset]; slotIndex++) {
-          const slotId = `${dayOffset}-${slotIndex}`;
-          const fromSelect = document.getElementById(`availability-from-${slotId}`);
-          const toSelect = document.getElementById(`availability-to-${slotId}`);
+      // Loop through all availability slots
+      for (let slotIndex = 0; slotIndex < availabilitySlotCount; slotIndex++) {
+        const dateSelect = document.getElementById(`availability-date-${slotIndex}`);
+        const fromSelect = document.getElementById(`availability-from-${slotIndex}`);
+        const toSelect = document.getElementById(`availability-to-${slotIndex}`);
 
-          if (fromSelect && toSelect && fromSelect.value && toSelect.value) {
-            const date = new Date(today);
-            date.setDate(date.getDate() + dayOffset);
+        // Check if slot still exists (not removed)
+        if (!dateSelect || !fromSelect || !toSelect) continue;
 
-            const [fromHour, fromMinute] = fromSelect.value.split(':').map(Number);
-            const fromDate = new Date(date);
-            fromDate.setHours(fromHour, fromMinute, 0, 0);
+        const dateValue = dateSelect.value;
+        const fromValue = fromSelect.value;
+        const toValue = toSelect.value;
 
-            const [toHour, toMinute] = toSelect.value.split(':').map(Number);
-            const toDate = new Date(date);
-            toDate.setHours(toHour, toMinute, 0, 0);
+        // Skip if not filled out
+        if (!dateValue || !fromValue || !toValue) continue;
 
-            const fromUnix = Math.floor(fromDate.getTime() / 1000);
-            const toUnix = Math.floor(toDate.getTime() / 1000);
+        validSlotCount++;
 
-            availabilityRanges.push(`${fromUnix}-${toUnix}`);
-          }
+        // Handle "All Day" selection
+        if (fromValue === 'all-day' && toValue === 'all-day') {
+          const date = new Date(dateValue);
+          const fromDate = new Date(date);
+          fromDate.setHours(0, 0, 0, 0);
+          const toDate = new Date(date);
+          toDate.setHours(23, 59, 59, 999);
+
+          const fromUnix = Math.floor(fromDate.getTime() / 1000);
+          const toUnix = Math.floor(toDate.getTime() / 1000);
+
+          availabilityRanges.push(`${fromUnix}-${toUnix}`);
+        } else {
+          // Handle specific time range
+          const date = new Date(dateValue);
+          const [fromHour, fromMinute] = fromValue.split(':').map(Number);
+          const fromDate = new Date(date);
+          fromDate.setHours(fromHour, fromMinute, 0, 0);
+
+          const [toHour, toMinute] = toValue.split(':').map(Number);
+          const toDate = new Date(date);
+          toDate.setHours(toHour, toMinute, 0, 0);
+
+          const fromUnix = Math.floor(fromDate.getTime() / 1000);
+          const toUnix = Math.floor(toDate.getTime() / 1000);
+
+          availabilityRanges.push(`${fromUnix}-${toUnix}`);
         }
       }
 
-      return availabilityRanges.join(', ');
+      return {
+        ranges: availabilityRanges.join(', '),
+        count: validSlotCount
+      };
     }
 
     function openImage(src) {
@@ -1872,6 +1990,13 @@
         return;
       }
 
+      // Validate availability slots
+      const availabilityData = getAvailabilityData();
+      if (availabilityData.count < 2) {
+        showToast('Please select at least 2 availability time slots', 'error');
+        return;
+      }
+
       const currentTimestamp = Math.floor(Date.now() / 1000);
       const currentDate = new Date().toLocaleString('en-US', {
         year: 'numeric',
@@ -1905,8 +2030,6 @@
       let orderId = null;
       let confirmationMessage = '';
 
-      const availabilityData = getAvailabilityData();
-
       while (!uploadSuccess && retryCount < maxRetries) {
         try {
           // Get Discord User ID from authenticated user
@@ -1924,7 +2047,7 @@
               price: item.price,
               quantity: item.quantity
             })),
-            availability: availabilityData,
+            availability: availabilityData.ranges,
             status: 'Received',
             paymentReceived: false,
             itemTransferred: false
@@ -2007,7 +2130,12 @@
         cart = [];
         updateCartCount();
         renderCartSidebar();
-        if (discordUsername) discordUsername.value = '';
+
+        // Reset Discord username field only if not auto-filled from auth
+        if (discordUsername && !discordUsername.readOnly) {
+          discordUsername.value = '';
+        }
+
         checkoutButton.innerHTML = originalButtonText;
         checkoutButton.disabled = false;
         orderProcessing = false;
@@ -2111,46 +2239,36 @@
         availability: sanitizeInput(requestData.availability || ''),
         notes: sanitizeInput(requestData.notes || '')
       };
-      console.log('Sending equipment request to Medrunner system:', {
-        orderId: secureRequestData.orderId,
-        timestamp: secureRequestData.timestamp,
-        discordUsername: secureRequestData.discordUsername,
-        url: APPS_SCRIPT_URL
-      });
+      // Only log in development mode - comment out for production
+      // console.log('Sending equipment request:', secureRequestData.orderId);
+
       const params = new URLSearchParams(secureRequestData);
       const response = await fetch(`${APPS_SCRIPT_URL}?${params.toString()}`, {
         method: 'POST'
       });
-
-      console.log('Response status:', response.status, response.statusText);
 
       if (!response.ok) {
         throw new Error(`Failed to send to Medrunner system: ${response.status} ${response.statusText}`);
       }
 
       const result = await response.text();
-      console.log('Raw response:', result);
 
       let jsonResult;
       try {
         jsonResult = JSON.parse(result);
-        console.log('Parsed response:', jsonResult);
       } catch (parseError) {
-        console.error('Failed to parse response as JSON:', parseError);
-        console.log('Raw response was:', result);
+        console.error('❌ Failed to parse response as JSON:', parseError);
+        console.error('Raw response was:', result);
         throw new Error('Invalid response format from server');
       }
 
       if (!jsonResult.success) {
-        console.error('Server returned error:', jsonResult.error);
+        console.error('❌ Server returned error:', jsonResult.error);
         throw new Error(jsonResult.error || 'Server-side validation failed');
       }
 
-      console.log('Order validated and processed successfully:', {
-        orderId: jsonResult.orderId,
-        calculatedTotal: jsonResult.calculatedTotal,
-        message: jsonResult.message
-      });
+      // Success - only log order ID
+      console.log('✓ Order submitted:', jsonResult.data?.orderId || 'Unknown ID');
 
       return jsonResult;
     }
