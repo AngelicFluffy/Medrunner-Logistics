@@ -282,7 +282,7 @@ window.MEDRUNNER_AUTH = {
 
     navUserContainer.style.display = 'flex';
 
-    // Add logout button handler
+    // logout button handler
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
       logoutBtn.onclick = () => this.logout();
@@ -290,7 +290,7 @@ window.MEDRUNNER_AUTH = {
   },
   
   /**
-   * Auto-fill Discord username field if it exists
+   * Auto-fill Discord username field
    */
   autoFillDiscordUsername() {
     const discordUsernameField = document.getElementById('discord-username');
@@ -298,7 +298,7 @@ window.MEDRUNNER_AUTH = {
     if (discordUsernameField && this.currentUser.discordUsername) {
       discordUsernameField.value = this.currentUser.discordUsername;
 
-      // Make it readonly to prevent changes
+      // Make it read only
       discordUsernameField.setAttribute('readonly', 'readonly');
       discordUsernameField.style.backgroundColor = '#1a2332';
       discordUsernameField.style.cursor = 'not-allowed';
@@ -374,3 +374,4 @@ if (document.readyState === 'loading') {
 } else {
   window.MEDRUNNER_AUTH.init();
 }
+
