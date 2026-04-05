@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Medrunner Logistics - Equipment Request Portal</title>
   <link rel="icon" type="image/png" href="favicon.png">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -228,6 +228,47 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.3; }
     }
+
+    /* Custom Order Modal - Quality Slider */
+    .quality-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      background: linear-gradient(to right, var(--slider-fill, #f59e0b) 0%, var(--slider-fill, #f59e0b) var(--slider-pct, 0%), #374151 var(--slider-pct, 0%), #374151 100%);
+      transition: background 0.2s;
+    }
+    .quality-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--slider-fill, #f59e0b);
+      border: 3px solid #1f2937;
+      box-shadow: 0 0 0 2px var(--slider-fill, #f59e0b);
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .quality-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--slider-fill, #f59e0b);
+      border: 3px solid #1f2937;
+      cursor: pointer;
+    }
+    .custom-order-build-option {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .custom-order-build-option.selected {
+      border-color: var(--option-color, #f59e0b) !important;
+      background: color-mix(in srgb, var(--option-color, #f59e0b) 10%, transparent) !important;
+    }
   </style>
 </head>
 <body class="text-white font-sans" style="background-color: #1f2937;">
@@ -308,11 +349,9 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
             <div class="flex items-center space-x-3 mb-3">
-              <div class="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                </svg>
-              </div>
+              <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+              </svg>
               <div>
                 <h3 class="font-semibold text-white">Collection</h3>
                 <p class="text-sm text-gray-400">CRU-L1</p>
@@ -322,11 +361,9 @@
 
           <div class="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50">
             <div class="flex items-center space-x-3 mb-3">
-              <div class="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
-                <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                </svg>
-              </div>
+              <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
               <div>
                 <h3 class="font-semibold text-white">Status</h3>
                 <p class="text-sm text-gray-400">Operational</p>
@@ -589,6 +626,252 @@
         <button onclick="closeOrderModal()" class="w-full py-3 px-6 font-semibold text-white rounded-xl transition-all duration-300 hover:shadow-lg" style="background: linear-gradient(135deg, #2c5278 0%, #1e3a5f 100%); border: 1px solid rgba(44, 82, 120, 0.5);">
           Got it!
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Requisition Choice Modal -->
+  <div id="requisition-choice-modal" class="fixed inset-0 bg-black/75 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-gradient-to-b from-gray-900 to-gray-950 rounded-3xl shadow-2xl border border-white/10 w-full max-w-md overflow-hidden">
+
+      <!-- Image Banner -->
+      <div class="relative h-52 overflow-hidden">
+        <img id="req-choice-image" src="Placeholder.png" alt=""
+             class="w-full h-full object-cover"
+             onerror="this.onerror=null;this.src='Placeholder.png'">
+        <!-- Depth gradients -->
+        <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-gray-900/30 to-transparent"></div>
+        <!-- Close button -->
+        <button onclick="closeRequisitionMenu()"
+                class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 border border-white/10 text-gray-300 hover:text-white backdrop-blur-sm transition-all">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <!-- Item info overlay -->
+        <div class="absolute bottom-0 left-0 right-0 px-5 pb-4">
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Requisition</p>
+          <p id="req-choice-item-name" class="text-white font-bold text-xl leading-tight drop-shadow-lg">Item Name</p>
+        </div>
+      </div>
+
+      <!-- Options -->
+      <div class="p-4 space-y-3">
+
+        <!-- Stock Build -->
+        <div class="rounded-2xl border border-white/8 bg-gray-800/40 p-4 space-y-3">
+          <!-- Title row -->
+          <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/20 flex items-center justify-center flex-shrink-0 text-base">🛠️</div>
+            <div>
+              <p class="text-white font-semibold text-sm">Stock Build</p>
+              <p class="text-xs text-gray-500">Standard requisition · Medrunner materials</p>
+            </div>
+          </div>
+          <!-- Inline base stats -->
+          <div id="req-base-stats" class="border-t border-white/5 pt-3 space-y-0.5 text-xs">
+            <p class="text-gray-600 text-xs italic animate-pulse">Loading stats…</p>
+          </div>
+          <!-- Quantity stepper + action -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-500 flex-shrink-0">Qty</span>
+            <div class="flex items-center rounded-xl border border-gray-600/50 bg-gray-900/60 overflow-hidden">
+              <button onclick="var el=document.getElementById('req-choice-quantity');if(parseInt(el.value)>1)el.value=parseInt(el.value)-1"
+                      class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-lg font-light">−</button>
+              <input type="number" id="req-choice-quantity" min="1" max="5" value="1"
+                     class="w-9 h-8 bg-transparent text-white text-center text-sm font-medium focus:outline-none">
+              <button onclick="var el2=document.getElementById('req-choice-quantity');var mx=parseInt(el2.max)||5;if(parseInt(el2.value)<mx)el2.value=parseInt(el2.value)+1"
+                      class="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-lg font-light">+</button>
+            </div>
+            <button onclick="confirmStockRequisition()"
+                    class="flex-1 h-8 rounded-xl font-semibold text-sm text-white transition-all hover:brightness-110 hover:shadow-lg hover:shadow-green-500/20"
+                    style="background:linear-gradient(135deg,#16a34a,#15803d);border:1px solid rgba(74,222,128,0.2)">
+              Add to Request
+            </button>
+          </div>
+        </div>
+
+        <!-- Crafted Order -->
+        <div id="req-crafted-section" class="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-950/40 to-gray-800/30 p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-3 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center flex-shrink-0 text-base">⚗️</div>
+              <div class="min-w-0">
+                <p class="text-white font-semibold text-sm">Crafted Order</p>
+                <p class="text-xs text-gray-400 truncate">Custom grade · Mission reqs may apply</p>
+              </div>
+            </div>
+            <button onclick="openCraftedOrder()"
+                    class="flex-shrink-0 h-8 px-4 rounded-xl font-semibold text-xs text-white transition-all hover:brightness-110 hover:shadow-lg hover:shadow-amber-500/20 whitespace-nowrap"
+                    style="background:linear-gradient(135deg,#d97706,#b45309);border:1px solid rgba(245,158,11,0.3)">
+              Configure →
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Order Modal -->
+  <div id="custom-order-modal" class="fixed inset-0 bg-black/75 hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl border border-amber-500/30 w-full max-w-4xl my-auto max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col">
+
+      <!-- Header (full width) -->
+      <div class="flex-shrink-0 flex justify-between items-center px-6 py-5 border-b border-amber-500/20 bg-gradient-to-r from-amber-600/10 to-orange-600/5">
+        <div>
+          <div class="flex items-center space-x-2 mb-1">
+            <span class="text-amber-400 text-lg">✦</span>
+            <h2 class="text-xl font-bold text-white">Custom Order</h2>
+          </div>
+          <p id="custom-order-item-title" class="text-amber-300/80 text-sm font-medium"></p>
+        </div>
+        <button onclick="closeCustomOrderModal()" class="text-gray-400 hover:text-white text-3xl font-light transition-colors hover:bg-gray-700/50 rounded-full w-10 h-10 flex items-center justify-center">&times;</button>
+      </div>
+
+      <!-- Two-column body: stacks on small screens, side-by-side on lg+ -->
+      <div class="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
+
+        <!-- LEFT: Controls -->
+        <div class="flex-1 p-6 space-y-5 overflow-y-auto">
+
+          <!-- Description -->
+          <div class="p-4 rounded-xl bg-gray-800/60 border border-gray-700/50 text-sm text-gray-300 leading-relaxed">
+            These items are crafted for Medrunners. Due to limited availability, higher quality tiers may require a minimum mission count to order. Supplying your own materials bypasses this requirement.
+          </div>
+
+          <!-- Back button -->
+          <button onclick="backToRequisitionMenu()"
+                  class="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors text-sm font-medium group w-fit">
+            <svg class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            <span>Back to Requisition</span>
+          </button>
+
+          <!-- Hidden build type state elements (used by selectBuildType JS) -->
+          <div id="build-opt-stock"  class="hidden" data-selected="0"></div>
+          <div id="build-opt-custom" class="hidden" data-selected="1"></div>
+
+          <!-- Quality Slider (Custom Grade only) -->
+          <div id="custom-grade-section" class="hidden space-y-4">
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Quality Grade</p>
+                <span id="quality-value-display" class="text-lg font-bold text-amber-400">500</span>
+              </div>
+              <input type="range" id="quality-slider" class="quality-slider" min="0" max="6" value="0" step="1"
+                     oninput="updateQualitySlider(this.value)" style="--slider-fill:#f59e0b;--slider-pct:0%">
+              <div class="flex justify-between text-xs text-gray-500 mt-1 px-0.5">
+                <span>500</span><span>600</span><span>700</span><span>800</span><span>900</span><span>950</span><span>1000</span>
+              </div>
+              <p class="text-xs text-gray-600 italic mt-2">Quality is approximate — the crafted item may be slightly higher or lower.</p>
+            </div>
+
+            <!-- Tier Info -->
+            <div id="tier-info-box" class="flex items-start space-x-3 p-3 rounded-xl border" style="background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.3)">
+              <svg class="w-5 h-5 flex-shrink-0 mt-0.5" id="tier-icon" fill="currentColor" viewBox="0 0 20 20" style="color:#f59e0b">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+              </svg>
+              <div>
+                <p id="tier-label" class="font-semibold text-sm" style="color:#f59e0b">Standard (500–699)</p>
+                <p id="tier-missions" class="text-xs text-gray-400 mt-0.5">⚠️ Requires <strong class="text-white">10</strong> completed missions</p>
+              </div>
+            </div>
+
+            <!-- Materials Unavailable Banner -->
+            <div id="materials-unavailable-banner" class="hidden flex items-start space-x-2 p-3 rounded-xl border border-red-500/40 bg-red-500/10 text-xs text-red-300">
+              <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+              <span>Medrunner does not currently have the materials for this quality grade. Check <strong class="text-white">I will supply my own premium materials</strong> below to proceed.</span>
+            </div>
+
+            <!-- Grade Reference -->
+            <div class="rounded-xl border border-gray-700/50 overflow-hidden text-xs">
+              <div class="bg-gray-800/70 px-3 py-2 font-semibold text-gray-400 uppercase tracking-wide">Grade Reference</div>
+              <div class="divide-y divide-gray-700/40">
+                <div class="flex justify-between px-3 py-2 tier-row" data-min="500" data-max="599"><span style="color:#e5e7eb">500+ Average</span><span class="text-gray-400">All members</span></div>
+                <div class="flex justify-between px-3 py-2 tier-row" data-min="600" data-max="699"><span style="color:#22c55e">600+ Good</span><span class="text-gray-400">10 missions</span></div>
+                <div class="flex justify-between px-3 py-2 tier-row" data-min="700" data-max="799"><span style="color:#3b82f6">700+ Excellent</span><span class="text-gray-400">35 missions</span></div>
+                <div class="flex justify-between px-3 py-2 tier-row" data-min="800" data-max="899"><span style="color:#a855f7">800+ Exceptional</span><span class="text-gray-400">45 missions</span></div>
+                <div class="flex justify-between px-3 py-2 tier-row" data-min="900" data-max="949"><span style="color:#ef4444">900+ Elite</span><span class="text-gray-400">60 missions</span></div>
+                <div class="flex justify-between px-3 py-2 tier-row" data-min="950" data-max="1000"><span style="color:#eab308">950+ Masterwork</span><span class="text-gray-400">100 missions</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Own Materials -->
+          <label class="flex items-start space-x-3 cursor-pointer group">
+            <input type="checkbox" id="own-materials-check" class="mt-0.5 w-4 h-4 accent-amber-500 flex-shrink-0"
+                   onchange="updateQualitySlider(document.getElementById('quality-slider').value)">
+            <div>
+              <p class="text-sm font-medium text-white group-hover:text-amber-300 transition-colors">I will supply my own premium materials</p>
+              <p class="text-xs text-gray-400 mt-0.5">Your materials will be collected at fulfilment. Higher quality materials may improve the final result.</p>
+            </div>
+          </label>
+
+          <!-- Action Buttons -->
+          <div class="flex space-x-3 pt-1">
+            <button onclick="closeCustomOrderModal()"
+                    class="flex-1 py-3 px-4 rounded-xl border border-gray-600 text-gray-300 hover:text-white hover:border-gray-400 transition-all text-sm font-semibold">
+              Cancel
+            </button>
+            <button id="confirm-custom-btn" onclick="confirmCustomOrder()"
+                    class="flex-1 py-3 px-4 rounded-xl font-semibold text-sm text-white transition-all hover:shadow-lg hover:shadow-amber-500/20"
+                    style="background:linear-gradient(135deg,#d97706,#b45309);border:1px solid rgba(245,158,11,0.4)">
+              Add to Request →
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Column divider: vertical on lg+, horizontal line on mobile -->
+        <div class="hidden lg:block w-px flex-shrink-0 bg-amber-500/10"></div>
+        <div class="block lg:hidden h-px flex-shrink-0 bg-amber-500/10"></div>
+
+        <!-- RIGHT: Stat Preview -->
+        <div class="w-full lg:w-80 flex-shrink-0 flex flex-col overflow-hidden bg-gray-900/20">
+
+          <!-- Right panel header (fixed) -->
+          <div class="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-gray-700/40">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Stat Preview</p>
+            <span id="stat-quality-badge" class="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">Stock Build</span>
+          </div>
+
+          <!-- Stat content (scrollable on lg+, natural height on mobile) -->
+          <div class="flex-1 overflow-y-auto p-5 space-y-3" id="crafting-stats-section">
+
+            <!-- Loading state -->
+            <div id="crafting-stats-loading" class="hidden text-center py-6 text-gray-500 text-xs">
+              <span class="animate-pulse">Loading weapon stats…</span>
+            </div>
+
+            <!-- Table -->
+            <div id="crafting-stats-table" class="hidden rounded-xl border border-gray-700/50 overflow-hidden text-xs">
+              <div id="crafting-stats-header" class="grid grid-cols-4 gap-1 bg-gray-800/70 px-3 py-2 font-semibold text-gray-400 uppercase tracking-wide">
+                <span>Stat</span>
+                <span class="text-right">Base</span>
+                <span class="text-right">Enhanced</span>
+                <span class="text-right">Change</span>
+              </div>
+              <div id="crafting-stats-rows" class="divide-y divide-gray-700/40"></div>
+            </div>
+
+            <!-- No-change at grade message -->
+            <p id="crafting-stats-none" class="hidden text-center text-gray-500 text-xs py-4">
+              No stat changes at this quality — try a higher grade.
+            </p>
+
+            <!-- No data for this item -->
+            <p id="crafting-stats-unavailable" class="hidden text-center text-gray-600 text-xs py-4 italic">
+              Stat data not available for this item.
+            </p>
+
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -937,7 +1220,6 @@
                        onerror="this.onerror=null; this.src='Placeholder.png';"
                        onclick="openImageModal('${item.image || 'Placeholder.png'}', '${item.name}')">
 
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
 
                   <div class="absolute bottom-3 left-3 z-10">
                     <span
@@ -1006,20 +1288,6 @@
                   }
 
                   <div class="space-y-3">
-                    <div class="flex items-center justify-between bg-gray-700/50 rounded-lg px-4 py-3 border border-gray-600/50">
-                      <label class="text-sm font-medium text-gray-300">Quantity</label>
-                      <input type="number"
-                             id="quantity-${item.name.replace(/\s+/g, '-')}"
-                             min="1"
-                             max="${(() => {
-                               const category = item.category.toLowerCase();
-                               if (category === 'kit' || category === 'ship' || category === 'ship component') return '1';
-                               return '5';
-                             })()}"
-                             value="1"
-                             class="quantity-input w-20 px-3 py-1 bg-gray-800 border border-gray-600 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                    </div>
-
                     ${(() => {
                       const hasAccess = userHasAccessToItem(item);
                       const isRestricted = item.restriction && item.restriction.trim() !== '' && item.restriction.trim().toLowerCase() !== 'none';
@@ -1029,8 +1297,22 @@
                       const buttonClass = disabled ? 'bg-red-600 hover:bg-red-700 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700';
                       const restrictionText = isWeapon ? 'Certification Required' : (isRestricted ? `${item.restriction} Restriction` : '');
                       const titleAttr = disabled ? `title="⛔ ${restrictionText} - You do not have access to requisition this item"` : '';
+                      const isKit = item.category && item.category.toLowerCase() === 'kit';
 
-                      if (item.category && item.category.toLowerCase() === 'kit') {
+                      const reqBtn = (extraClass = '') =>
+                        `<button onclick="openRequisitionMenu('${item.name.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', this)"
+                                 class="${buttonClass} text-white py-2.5 px-3 font-semibold text-xs rounded-lg transition-all duration-200 flex items-center justify-center space-x-1.5 hover:shadow-lg disabled:opacity-75 disabled:cursor-not-allowed ${extraClass}"
+                                 id="btn-${item.name.replace(/\s+/g, '-')}"
+                                 ${disabledAttr} ${titleAttr}
+                                 data-item-name="${item.name.replace(/"/g, '&quot;')}"
+                                 data-has-access="${hasAccess}">
+                           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                             <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
+                           </svg>
+                           <span>Requisition</span>
+                         </button>`;
+
+                      if (isKit) {
                         return `<div class="grid grid-cols-2 gap-2">
                           <button onclick="showKitInformation('${item.name.replace(/'/g, "\\'")}')"
                                   class="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-3 font-semibold text-xs rounded-lg transition-all duration-200 flex items-center justify-center space-x-1.5 hover:shadow-lg">
@@ -1039,32 +1321,10 @@
                             </svg>
                             <span>Kit Info</span>
                           </button>
-                          <button onclick="addToCart('${item.name.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', this)"
-                                  class="${buttonClass} text-white py-2.5 px-3 font-semibold text-xs rounded-lg transition-all duration-200 flex items-center justify-center space-x-1.5 hover:shadow-lg disabled:opacity-75 disabled:cursor-not-allowed"
-                                  id="btn-${item.name.replace(/\s+/g, '-')}"
-                                  ${disabledAttr}
-                                  ${titleAttr}
-                                  data-item-name="${item.name.replace(/"/g, '&quot;')}"
-                                  data-has-access="${hasAccess}">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
-                            </svg>
-                            <span>Requisition</span>
-                          </button>
+                          ${reqBtn()}
                         </div>`;
                       } else {
-                        return `<button onclick="addToCart('${item.name.replace(/'/g, "\\'")}', '${item.name.replace(/'/g, "\\'")}', this)"
-                                class="w-full ${buttonClass} text-white py-3 px-4 font-semibold text-sm rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 hover:shadow-lg disabled:opacity-75 disabled:cursor-not-allowed"
-                                id="btn-${item.name.replace(/\s+/g, '-')}"
-                                ${disabledAttr}
-                                ${titleAttr}
-                                data-item-name="${item.name.replace(/"/g, '&quot;')}"
-                                data-has-access="${hasAccess}">
-                          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"></path>
-                          </svg>
-                          <span>Requisition</span>
-                        </button>`;
+                        return reqBtn('w-full');
                       }
                     })()}
                   </div>
@@ -1176,6 +1436,603 @@
         modal.classList.add('hidden');
       }
     }
+
+    // ── Custom Order Modal ────────────────────────────────────────────────────
+
+    // Pending custom order state (populated when modal opens)
+    let _customOrderPending = null;
+
+    const CUSTOM_TIERS = [
+      { min: 500, max: 599,  label: 'Average (500+)',     missions: 0,   color: '#e5e7eb' },
+      { min: 600, max: 699,  label: 'Good (600+)',        missions: 10,  color: '#22c55e' },
+      { min: 700, max: 799,  label: 'Excellent (700+)',   missions: 35,  color: '#3b82f6' },
+      { min: 800, max: 899,  label: 'Exceptional (800+)', missions: 45,  color: '#a855f7' },
+      { min: 900, max: 949,  label: 'Elite (900+)',       missions: 60,  color: '#ef4444' },
+      { min: 950, max: 1000, label: 'Masterwork (950+)',  missions: 100, color: '#eab308' },
+    ];
+
+    // The 7 discrete quality breakpoints the slider snaps to
+    const QUALITY_STEPS = [500, 600, 700, 800, 900, 950, 1000];
+
+    function getCustomTier(grade) {
+      return CUSTOM_TIERS.find(t => grade >= t.min && grade <= t.max) || CUSTOM_TIERS[0];
+    }
+
+    async function openCustomOrderModal(name, fullName, mode = 'stock') {
+      // Mark as pending with craftingData = undefined (fetching) initially
+      _customOrderPending = { name, fullName, craftingData: undefined };
+
+      document.getElementById('custom-order-item-title').textContent = name;
+      document.getElementById('own-materials-check').checked = false;
+
+      // Set build type to requested mode
+      selectBuildType(mode);
+
+      // Reset slider to first step (quality 500)
+      const slider = document.getElementById('quality-slider');
+      slider.value = 0;
+      updateQualitySlider(0);
+
+      document.getElementById('custom-order-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      // Fetch crafting data in the background (non-blocking)
+      const craftingData = await fetchCraftingDataForItem(name);
+
+      // Only apply if the user hasn't closed/changed the modal
+      if (_customOrderPending && _customOrderPending.name === name) {
+        _customOrderPending.craftingData = craftingData; // null if unavailable
+
+        // Update stat display for whichever build type is active
+        const isStock    = document.getElementById('build-opt-stock').dataset.selected === '1';
+        const sliderIdx  = parseInt(document.getElementById('quality-slider').value);
+        const grade      = QUALITY_STEPS[sliderIdx] ?? QUALITY_STEPS[0];
+        updateStatDisplay(grade, isStock);
+      }
+    }
+
+    function closeCustomOrderModal() {
+      document.getElementById('custom-order-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+      _customOrderPending = null;
+      _reqPending = null;
+    }
+
+    function backToRequisitionMenu() {
+      document.getElementById('custom-order-modal').classList.add('hidden');
+      _customOrderPending = null;
+      if (_reqPending) {
+        document.getElementById('requisition-choice-modal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+
+    // ── Requisition Choice Menu ───────────────────────────────────────────────
+    let _reqPending = null;
+
+    function openRequisitionMenu(name, fullName, button) {
+      if (!window.MEDRUNNER_AUTH || !window.MEDRUNNER_AUTH.isAuthenticated) {
+        showToast('Please login with Discord to add items to cart', 'error');
+        if (window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.loginWithDiscord) {
+          window.MEDRUNNER_AUTH.loginWithDiscord();
+        }
+        return;
+      }
+      const invItem = window.inventoryData && Object.values(window.inventoryData).find(i => i.name === name);
+      let maxQty = 5;
+      let itemImage = 'Placeholder.png';
+      let isCraftable = false;
+      if (invItem) {
+        const cat = (invItem.category || '').toLowerCase();
+        if (cat === 'kit' || cat === 'ship' || cat === 'ship component') maxQty = 1;
+        itemImage = invItem.image || 'Placeholder.png';
+        isCraftable = invItem.craftable === true;
+      }
+      _reqPending = { name, fullName, maxQty };
+
+      // Set image banner
+      const imgEl = document.getElementById('req-choice-image');
+      if (imgEl) { imgEl.src = itemImage; imgEl.alt = name; }
+
+      document.getElementById('req-choice-item-name').textContent = name;
+      const qtyInput = document.getElementById('req-choice-quantity');
+      qtyInput.max = maxQty;
+      qtyInput.value = 1;
+
+      // Show Crafted Order section only for craftable items
+      const craftedSection = document.getElementById('req-crafted-section');
+      if (craftedSection) craftedSection.classList.toggle('hidden', !isCraftable);
+
+      // Reset stats panel to loading state
+      const statsEl = document.getElementById('req-base-stats');
+      if (statsEl) statsEl.innerHTML = '<p class="text-gray-600 text-xs italic animate-pulse">Loading stats…</p>';
+
+      document.getElementById('requisition-choice-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+
+      // Fetch crafting data non-blocking and populate the stats panel
+      fetchCraftingDataForItem(name).then(craftingData => {
+        if (!_reqPending || _reqPending.name !== name) return;
+        renderReqBaseStats(craftingData);
+      });
+    }
+
+    function closeRequisitionMenu() {
+      document.getElementById('requisition-choice-modal').classList.add('hidden');
+      document.body.style.overflow = '';
+      _reqPending = null;
+    }
+
+    function confirmStockRequisition() {
+      if (!_reqPending) return;
+      const { name, fullName, maxQty } = _reqPending;
+      const qty = parseInt(document.getElementById('req-choice-quantity').value);
+      if (!qty || qty < 1 || qty > maxQty) {
+        showToast(`Invalid quantity. Must be between 1 and ${maxQty}.`, 'error');
+        return;
+      }
+      const sanitizedName = sanitizeInput(name);
+      const sanitizedFullName = sanitizeInput(fullName);
+      const existing = cart.find(item => item.name === sanitizedName && !item.isCustom);
+      if (existing) {
+        const newTotal = existing.quantity + qty;
+        if (newTotal > maxQty) {
+          const canAdd = maxQty - existing.quantity;
+          if (canAdd > 0) {
+            existing.quantity = maxQty;
+            showToast(`Added ${canAdd}x ${name} (max ${maxQty} reached)`, 'warning');
+          } else {
+            showToast(`Maximum ${maxQty} already in cart for ${name}`, 'error');
+            closeRequisitionMenu();
+            return;
+          }
+        } else {
+          existing.quantity = newTotal;
+          showToast(`Added ${qty}x ${name} to request!`);
+        }
+      } else {
+        cart.push({ name: sanitizedName, fullName: sanitizedFullName, price: 'Free', quantity: qty, isCustom: false });
+        showToast(`Added ${qty}x ${name} to request!`);
+      }
+      closeRequisitionMenu();
+      updateCartCount();
+      renderCartSidebar();
+    }
+
+    function openCraftedOrder() {
+      if (!_reqPending) return;
+      const { name, fullName } = _reqPending;
+      // Hide but keep _reqPending so the back button can return to the requisition modal
+      document.getElementById('requisition-choice-modal').classList.add('hidden');
+      openCustomOrderModal(name, fullName, 'custom');
+    }
+
+    function renderReqBaseStats(craftingData) {
+      const statsEl = document.getElementById('req-base-stats');
+      if (!statsEl) return;
+      if (!craftingData || !craftingData.baseStats) {
+        statsEl.innerHTML = '';
+        return;
+      }
+      const STAT_DEFS = craftingData.category === 'armor' ? ARMOR_STAT_DEFS : WEAPON_STAT_DEFS;
+      const base = craftingData.baseStats;
+      const fmt = (n) => {
+        if (Math.abs(n) >= 100) return n.toFixed(0);
+        if (Math.abs(n) >= 10)  return n.toFixed(1);
+        return n.toFixed(3).replace(/\.?0+$/, '') || '0';
+      };
+      const rows = STAT_DEFS.map(def => {
+        const baseRaw = base[def.key];
+        const baseNum = parseBaseValue(baseRaw);
+        if (baseNum === null) return '';
+        const unit = def.unit || parseUnit(baseRaw);
+        return `<div class="flex justify-between items-center py-0.5 border-b border-gray-700/40 last:border-0">
+          <span class="text-gray-400">${def.label}</span>
+          <span class="text-gray-200 font-medium ml-2">${fmt(baseNum)}${unit}</span>
+        </div>`;
+      }).filter(Boolean).join('');
+      statsEl.innerHTML = rows || '<p class="text-gray-600 text-xs italic">No stats available</p>';
+    }
+
+    // ── End Requisition Choice Menu ───────────────────────────────────────────
+
+    function selectBuildType(type) {
+      const stockOpt     = document.getElementById('build-opt-stock');
+      const customOpt    = document.getElementById('build-opt-custom');
+      const gradeSection = document.getElementById('custom-grade-section');
+      const badge        = document.getElementById('stat-quality-badge');
+
+      if (type === 'stock') {
+        stockOpt.classList.add('selected');
+        customOpt.classList.remove('selected');
+        gradeSection.classList.add('hidden');
+        if (badge) { badge.textContent = 'Stock Build'; badge.style.color = '#f59e0b'; }
+        updateStatDisplay(500, true); // show stock context (grade 500, isStock flag)
+      } else {
+        customOpt.classList.add('selected');
+        stockOpt.classList.remove('selected');
+        gradeSection.classList.remove('hidden');
+        updateQualitySlider(document.getElementById('quality-slider').value);
+        // updateQualitySlider already calls updateStatDisplay
+      }
+      stockOpt.dataset.selected  = (type === 'stock')  ? '1' : '0';
+      customOpt.dataset.selected = (type === 'custom') ? '1' : '0';
+    }
+
+    function updateQualitySlider(rawValue) {
+      const idx   = parseInt(rawValue);
+      const grade = QUALITY_STEPS[idx] ?? QUALITY_STEPS[0];
+      const tier  = getCustomTier(grade);
+      const pct   = (idx / (QUALITY_STEPS.length - 1) * 100).toFixed(1);
+
+      // Update slider CSS vars
+      const slider = document.getElementById('quality-slider');
+      slider.style.setProperty('--slider-fill', tier.color);
+      slider.style.setProperty('--slider-pct', pct + '%');
+
+      // Update display
+      const display = document.getElementById('quality-value-display');
+      display.textContent = grade;
+      display.style.color = tier.color;
+
+      // Update tier info box
+      const box = document.getElementById('tier-info-box');
+      box.style.background = `color-mix(in srgb, ${tier.color} 8%, transparent)`;
+      box.style.borderColor = `color-mix(in srgb, ${tier.color} 30%, transparent)`;
+
+      document.getElementById('tier-icon').style.color = tier.color;
+      const lbl = document.getElementById('tier-label');
+      lbl.textContent = tier.label;
+      lbl.style.color = tier.color;
+      document.getElementById('tier-missions').innerHTML = tier.missions === 0
+        ? '✅ Available to all members'
+        : `⚠️ Requires <strong class="text-white">${tier.missions}</strong> completed missions`;
+
+      // Highlight active tier row in reference table
+      document.querySelectorAll('.tier-row').forEach(row => {
+        const active = grade >= parseInt(row.dataset.min) && grade <= parseInt(row.dataset.max);
+        row.style.background = active
+          ? `color-mix(in srgb, ${tier.color} 12%, transparent)`
+          : '';
+      });
+
+      // Update quality badge in the right panel
+      const badge = document.getElementById('stat-quality-badge');
+      if (badge) {
+        badge.textContent = `Grade ${grade}`;
+        badge.style.color = tier.color;
+        badge.style.borderColor = `color-mix(in srgb, ${tier.color} 40%, transparent)`;
+        badge.style.background  = `color-mix(in srgb, ${tier.color} 12%, transparent)`;
+      }
+
+      // Check material availability for this grade
+      const craftingData  = _customOrderPending && _customOrderPending.craftingData;
+      const qualityLevels = craftingData && craftingData.qualityLevels;
+      const levelEntry    = qualityLevels && qualityLevels.find(l => l.quality === grade);
+      const materialsOk   = !levelEntry || levelEntry.available ||
+                            document.getElementById('own-materials-check').checked;
+
+      const banner  = document.getElementById('materials-unavailable-banner');
+      const btn     = document.getElementById('confirm-custom-btn');
+      if (banner) banner.classList.toggle('hidden', materialsOk);
+      if (btn) {
+        btn.disabled = !materialsOk;
+        btn.style.opacity  = materialsOk ? '' : '0.4';
+        btn.style.cursor   = materialsOk ? '' : 'not-allowed';
+      }
+
+      // Update stat comparison
+      updateStatDisplay(grade, false);
+    }
+
+    function confirmCustomOrder() {
+      if (!_customOrderPending) return;
+
+      const { name, fullName } = _customOrderPending;
+      const isStockBuild = document.getElementById('build-opt-stock').dataset.selected === '1';
+      const ownMaterials = document.getElementById('own-materials-check').checked;
+
+      // Safety guard: block submission if materials unavailable and not supplying own
+      if (!isStockBuild) {
+        const sliderIdx    = parseInt(document.getElementById('quality-slider').value);
+        const grade        = QUALITY_STEPS[sliderIdx] ?? QUALITY_STEPS[0];
+        const qualityLevels = _customOrderPending.craftingData && _customOrderPending.craftingData.qualityLevels;
+        const levelEntry    = qualityLevels && qualityLevels.find(l => l.quality === grade);
+        if (levelEntry && !levelEntry.available && !ownMaterials) {
+          showToast('Materials unavailable for this grade — please supply your own or choose a lower grade.', 'error');
+          return;
+        }
+      }
+      const sliderIdx    = parseInt(document.getElementById('quality-slider').value);
+      const grade        = QUALITY_STEPS[sliderIdx] ?? QUALITY_STEPS[0];
+
+      // Build the tier tag for the item name sent to the sheet
+      let gradeTag = isStockBuild ? 'Stock' : `Grade: ${grade}`;
+      if (ownMaterials) gradeTag += ' | Own Materials';
+
+      const sanitizedName     = sanitizeInput(name);
+      const sanitizedFullName = sanitizeInput(fullName);
+
+      // Custom orders are always quantity 1; prevent duplicates per grade type
+      const existingItem = cart.find(item =>
+        item.name === sanitizedName && item.isCustom && item.customTag === gradeTag
+      );
+
+      if (existingItem) {
+        showToast(`Custom order for "${name}" already in request`, 'error');
+        closeCustomOrderModal();
+        return;
+      }
+
+      cart.push({
+        name: sanitizedName,
+        fullName: sanitizedFullName,
+        price: 'Free',
+        quantity: 1,
+        isCustom: true,
+        customTag: gradeTag,
+        customNotes: ''
+      });
+
+      const label = `${name} [Custom | ${gradeTag}]`;
+      showToast(`Added ${label} to request!`);
+      closeCustomOrderModal();
+      updateCartCount();
+      renderCartSidebar();
+    }
+
+    // ── End Custom Order Modal ────────────────────────────────────────────────
+
+    // ── Crafting Stat Display ─────────────────────────────────────────────────
+
+    window.craftingDataCache = {};
+
+    const WEAPON_STAT_DEFS = [
+      { key: 'fireRate',     label: 'Fire Rate',     unit: '',  lowerIsBetter: false },
+      { key: 'damage',       label: 'Damage / Shot', unit: '',  lowerIsBetter: false },
+      { key: 'dps',          label: 'DPS',           unit: '',  lowerIsBetter: false },
+      { key: 'recoilPitch',  label: 'Recoil Pitch',  unit: '°', lowerIsBetter: true  },
+      { key: 'recoilYaw',    label: 'Recoil Yaw',    unit: '°', lowerIsBetter: true  },
+      { key: 'recoilSmooth', label: 'Recoil Smooth', unit: 's', lowerIsBetter: true  },
+      { key: 'spread',       label: 'Spread',        unit: '°', lowerIsBetter: true  },
+      { key: 'ammoSpeed',    label: 'Ammo Speed',    unit: '',  lowerIsBetter: false },
+    ];
+
+    const ARMOR_STAT_DEFS = [
+      { key: 'physicalResistance',    label: 'Physical Resist',    unit: '%', lowerIsBetter: false },
+      { key: 'energyResistance',      label: 'Energy Resist',      unit: '%', lowerIsBetter: false },
+      { key: 'distortionResistance',  label: 'Distortion Resist',  unit: '%', lowerIsBetter: false },
+      { key: 'thermalResistance',     label: 'Thermal Resist',     unit: '%', lowerIsBetter: false },
+      { key: 'biochemicalResistance', label: 'Biochemical Resist', unit: '%', lowerIsBetter: false },
+      { key: 'stunResistance',        label: 'Stun Resist',        unit: '%', lowerIsBetter: false },
+      { key: 'minTemperature',        label: 'Min Temp',           unit: '°', lowerIsBetter: true  },
+      { key: 'maxTemperature',        label: 'Max Temp',           unit: '°', lowerIsBetter: false },
+    ];
+
+    // Parse a raw base-stat cell to a float (strips °, s, handles min–max ranges)
+    function parseBaseValue(val) {
+      if (val === null || val === undefined || val === '') return null;
+      const str = val.toString().trim();
+      // Range like "0.18–5.00°" — use the lower bound
+      const firstPart = str.split('–')[0];
+      const cleaned = firstPart.replace(/[°s]/g, '').trim();
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? null : num;
+    }
+
+    // Detect unit from a raw base-stat cell
+    function parseUnit(val) {
+      if (!val) return '';
+      const str = val.toString();
+      if (str.includes('°')) return '°';
+      if (/\d/.test(str) && str.endsWith('s')) return 's';
+      return '';
+    }
+
+    // Parse a quality-row percentage cell ("+20.00%", "-40.00%", "0.00%", "-")
+    function parsePctChange(val) {
+      if (val === null || val === undefined) return null;
+      const str = val.toString().trim();
+      if (str === '-' || str === '') return null;
+      const num = parseFloat(str.replace('%', ''));
+      return isNaN(num) ? null : num;
+    }
+
+    async function fetchCraftingDataForItem(itemName) {
+      if (window.craftingDataCache[itemName] !== undefined) {
+        return window.craftingDataCache[itemName]; // may be null if previously failed
+      }
+      if (!window.MEDRUNNER_CONFIG || !window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL) {
+        window.craftingDataCache[itemName] = null;
+        return null;
+      }
+      try {
+        DEV_MODE.log(`📡 Fetching crafting data for: ${itemName}`);
+        const data = await fetchWithRetry(window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL, {
+          action: 'getCraftingData',
+          weaponName: itemName
+        });
+        if (data && data.success && data.data) {
+          DEV_MODE.log(`✅ Crafting data loaded for: ${itemName}`, data.data);
+          window.craftingDataCache[itemName] = data.data;
+          return data.data;
+        } else {
+          DEV_MODE.warn(`⚠️ Crafting data not found for: ${itemName}`, data);
+          window.craftingDataCache[itemName] = null;
+          return null;
+        }
+      } catch (err) {
+        DEV_MODE.warn(`⚠️ Crafting data fetch failed for: ${itemName}`, err);
+        window.craftingDataCache[itemName] = null;
+        return null;
+      }
+    }
+
+    function updateStatDisplay(grade, isStock = false) {
+      const loading   = document.getElementById('crafting-stats-loading');
+      const table     = document.getElementById('crafting-stats-table');
+      const rowsCont  = document.getElementById('crafting-stats-rows');
+      const stockMsg  = document.getElementById('crafting-stats-stock');
+      const noneMsg   = document.getElementById('crafting-stats-none');
+      const naMsg     = document.getElementById('crafting-stats-unavailable');
+
+      // Hide all state elements first
+      [loading, table, stockMsg, noneMsg, naMsg].forEach(el => el && el.classList.add('hidden'));
+
+      DEV_MODE.log(`🔍 updateStatDisplay called — grade=${grade}, isStock=${isStock}`);
+
+      // Still fetching
+      if (_customOrderPending && _customOrderPending.craftingData === undefined) {
+        DEV_MODE.log('⏳ Still fetching crafting data…');
+        if (loading) loading.classList.remove('hidden');
+        return;
+      }
+
+      const craftingData = _customOrderPending && _customOrderPending.craftingData;
+      DEV_MODE.log('📦 craftingData =', craftingData);
+
+      // No crafting data for this item (not in Crafting sheet, or fetch failed)
+      if (!craftingData || !craftingData.baseStats || !craftingData.qualityLevels) {
+        DEV_MODE.warn('❌ No craftingData / baseStats / qualityLevels — showing N/A message');
+        if (naMsg) naMsg.classList.remove('hidden');
+        return;
+      }
+
+      const STAT_DEFS = craftingData.category === 'armor' ? ARMOR_STAT_DEFS : WEAPON_STAT_DEFS;
+
+      // Format a number with meaningful precision
+      const fmt = (n) => {
+        if (Math.abs(n) >= 100) return n.toFixed(0);
+        if (Math.abs(n) >= 10)  return n.toFixed(1);
+        return n.toFixed(3).replace(/\.?0+$/, '') || '0';
+      };
+
+      // ── Stock build: show base stats only ────────────────────────────────────
+      if (isStock) {
+        const header = document.getElementById('crafting-stats-header');
+        if (header) {
+          header.className = 'grid grid-cols-2 gap-1 bg-gray-800/70 px-3 py-2 font-semibold text-gray-400 uppercase tracking-wide';
+          header.innerHTML = '<span>Stat</span><span class="text-right">Value</span>';
+        }
+        const base = craftingData.baseStats;
+        const rows = [];
+        for (const def of STAT_DEFS) {
+          const baseRaw = base[def.key];
+          const baseNum = parseBaseValue(baseRaw);
+          if (baseNum === null) continue;
+          const unit = def.unit || parseUnit(baseRaw);
+          rows.push(`
+            <div class="grid grid-cols-2 gap-1 px-3 py-2 items-center">
+              <span class="text-gray-300 text-xs">${def.label}</span>
+              <span class="text-right text-gray-200 font-medium text-xs">${fmt(baseNum)}${unit}</span>
+            </div>`);
+        }
+        if (rows.length === 0) {
+          if (naMsg) naMsg.classList.remove('hidden');
+        } else {
+          rowsCont.innerHTML = rows.join('');
+          table.classList.remove('hidden');
+        }
+        return;
+      }
+
+      // ── Custom grade from here ────────────────────────────────────────────────
+      // Restore 4-column header in case we came from stock view
+      const header = document.getElementById('crafting-stats-header');
+      if (header) {
+        header.className = 'grid grid-cols-4 gap-1 bg-gray-800/70 px-3 py-2 font-semibold text-gray-400 uppercase tracking-wide';
+        header.innerHTML = '<span>Stat</span><span class="text-right">Base</span><span class="text-right">Enhanced</span><span class="text-right">Change</span>';
+      }
+
+      DEV_MODE.log('📊 qualityLevels =', craftingData.qualityLevels);
+
+      // Find the highest quality breakpoint that is ≤ the selected grade
+      const candidates = craftingData.qualityLevels
+        .filter(l => l.quality <= grade)
+        .sort((a, b) => b.quality - a.quality);
+
+      DEV_MODE.log(`🎯 candidates for grade ${grade}:`, candidates);
+
+      if (candidates.length === 0) {
+        DEV_MODE.warn('⚠️ No candidates found — showing "no stat changes" message');
+        noneMsg.classList.remove('hidden');
+        return;
+      }
+
+      const level = candidates[0];
+      const base  = craftingData.baseStats;
+
+      // Determine which stats ever change for this item (nonzero at max quality).
+      // Stats that change at higher grades are shown greyed-out at lower grades
+      // so the user can see they will improve rather than appearing out of nowhere.
+      const maxLevel = craftingData.qualityLevels
+        .slice().sort((a, b) => b.quality - a.quality)[0];
+
+      DEV_MODE.log('🏆 maxLevel =', maxLevel);
+
+      const relevantStats = new Set(
+        STAT_DEFS
+          .filter(def => {
+            const pct = parsePctChange(maxLevel ? maxLevel[def.key] : null);
+            return pct !== null && pct !== 0;
+          })
+          .map(def => def.key)
+      );
+
+      DEV_MODE.log('📋 relevantStats =', [...relevantStats]);
+
+      const rows = [];
+
+      for (const def of STAT_DEFS) {
+        if (!relevantStats.has(def.key)) continue;
+
+        const baseRaw = base[def.key];
+        const baseNum = parseBaseValue(baseRaw);
+        if (baseNum === null) continue;
+
+        const unit = def.unit || parseUnit(baseRaw);
+        const pct  = parsePctChange(level[def.key]);
+
+        if (pct === null || pct === 0) {
+          // Craftable stat not yet changed at this quality — show greyed out
+          rows.push(`
+            <div class="grid grid-cols-4 gap-1 px-3 py-2 items-center opacity-40">
+              <span class="text-gray-400 text-xs">${def.label}</span>
+              <span class="text-right text-gray-500 text-xs">${fmt(baseNum)}${unit}</span>
+              <span class="text-right text-gray-600 text-xs">—</span>
+              <span class="text-right text-gray-600 text-xs">—</span>
+            </div>`);
+        } else {
+          const enhanced = baseNum * (1 + pct / 100);
+          // Use actual value direction (not just sign of pct) so negative base stats
+          // like Min Temperature (-75°) correctly show green when they go more negative.
+          const valueIncreased = enhanced > baseNum;
+          const isGood         = def.lowerIsBetter ? !valueIncreased : valueIncreased;
+          const changeColor    = isGood ? 'text-green-400' : 'text-red-400';
+          const enhColor       = isGood ? 'text-green-400' : 'text-red-400';
+          const pctStr         = (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
+
+          rows.push(`
+            <div class="grid grid-cols-4 gap-1 px-3 py-2 items-center">
+              <span class="text-gray-300 text-xs">${def.label}</span>
+              <span class="text-right text-gray-400 text-xs">${fmt(baseNum)}${unit}</span>
+              <span class="text-right ${enhColor} font-medium text-xs">${fmt(enhanced)}${unit}</span>
+              <span class="text-right ${changeColor} font-medium text-xs">${pctStr}</span>
+            </div>`);
+        }
+      }
+
+      if (rows.length === 0) {
+        noneMsg.classList.remove('hidden');
+      } else {
+        rowsCont.innerHTML = rows.join('');
+        table.classList.remove('hidden');
+      }
+    }
+
+    // ── End Crafting Stat Display ─────────────────────────────────────────────
 
     document.addEventListener('click', function(event) {
       const modal = document.getElementById('kitInfoModal');
@@ -1339,6 +2196,37 @@
     window.lastInventoryUpdate = null;
     window.kitDataCache = {}; // Cache for kit information
 
+    // ── Inventory catalog caching ─────────────────────────────────────────────
+    const INVENTORY_CACHE_KEY = 'medrunnerInventoryCache';
+    const INVENTORY_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+    function getCachedInventory() {
+      try {
+        const raw = localStorage.getItem(INVENTORY_CACHE_KEY);
+        if (!raw) return null;
+        const { timestamp, data } = JSON.parse(raw);
+        if (Date.now() - timestamp > INVENTORY_CACHE_TTL) {
+          localStorage.removeItem(INVENTORY_CACHE_KEY);
+          return null;
+        }
+        return data;
+      } catch (e) {
+        localStorage.removeItem(INVENTORY_CACHE_KEY);
+        return null;
+      }
+    }
+
+    function setCachedInventory(inventoryData) {
+      try {
+        localStorage.setItem(INVENTORY_CACHE_KEY, JSON.stringify({
+          timestamp: Date.now(),
+          data: inventoryData
+        }));
+      } catch (e) {
+        // Storage quota exceeded — skip caching silently
+      }
+    }
+
     async function fetchInventoryData() {
       try {
         if (!window.MEDRUNNER_CONFIG || !window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL) {
@@ -1349,8 +2237,17 @@
           throw new Error('Medrunner configuration not set up. Please update medrunner-config.js');
         }
 
-        DEV_MODE.log('📡 Fetching inventory data...');
-        // Use JSONP with retry to bypass CORS
+        // ── Return cached catalog if it is still fresh (< 1 hour old) ──────
+        const cached = getCachedInventory();
+        if (cached) {
+          DEV_MODE.log('✅ Inventory loaded from cache (' + Object.keys(cached).length + ' items)');
+          window.inventoryData = cached;
+          window.lastInventoryUpdate = new Date();
+          await cacheAllKitData();
+          return cached;
+        }
+
+        DEV_MODE.log('📡 Fetching inventory data from Apps Script...');
         const data = await fetchWithRetry(window.MEDRUNNER_CONFIG.APPS_SCRIPT_URL, { action: 'getInventory' });
 
         if (!data || !data.success) {
@@ -1360,6 +2257,9 @@
         DEV_MODE.log('✅ Inventory data loaded:', Object.keys(data.data.inventory).length, 'items');
         window.inventoryData = data.data.inventory;
         window.lastInventoryUpdate = new Date();
+
+        // Store in cache for the next hour
+        setCachedInventory(data.data.inventory);
 
         // Pre-fetch all kit information for instant display
         await cacheAllKitData();
@@ -1897,7 +2797,7 @@
       }
     }
 
-    function addToCart(name, fullName, button) {
+    function addToCart(name, fullName, button, isCustom = false) {
       // Check if user is authenticated
       if (!window.MEDRUNNER_AUTH || !window.MEDRUNNER_AUTH.isAuthenticated) {
         showToast('Please login with Discord to add items to cart', 'error');
@@ -1908,15 +2808,7 @@
         return;
       }
 
-      const card = button.closest('.equipment-card');
-      const quantityInput = card.querySelector('.quantity-input');
-
-      if (!quantityInput) {
-        console.error('❌ Could not find quantity input for:', name);
-        return;
-      }
-
-      // Check if user has access to this item
+      // Check if user has access to this item (shared for both paths)
       const inventoryItem = Object.values(window.inventoryData || {}).find(item => item.name === name);
       if (inventoryItem && !userHasAccessToItem(inventoryItem)) {
         const restriction = inventoryItem.restriction.trim();
@@ -1926,6 +2818,20 @@
           : `⛔ ${restriction} Restriction - You do not have access to requisition this item.`;
         showToast(message, 'error');
         console.warn('Access denied for restricted item:', name, 'Restriction:', restriction);
+        return;
+      }
+
+      // Custom orders skip the normal quantity flow and go through the modal
+      if (isCustom) {
+        openCustomOrderModal(name, fullName);
+        return;
+      }
+
+      const card = button.closest('.equipment-card');
+      const quantityInput = card.querySelector('.quantity-input');
+
+      if (!quantityInput) {
+        console.error('❌ Could not find quantity input for:', name);
         return;
       }
 
@@ -1947,7 +2853,8 @@
         return;
       }
 
-      const existingItem = cart.find(item => item.name === sanitizedName);
+      // Standard requisition path - find existing standard cart entry for this item
+      const existingItem = cart.find(item => item.name === sanitizedName && !item.isCustom);
 
       if (existingItem) {
         // Check if adding would exceed max
@@ -1970,7 +2877,8 @@
           name: sanitizedName,
           fullName: sanitizedFullName,
           price: 'Free',
-          quantity
+          quantity,
+          isCustom: false
         });
         showToast(`Added ${quantity}x ${name} to request!`);
       }
@@ -2143,15 +3051,24 @@
           limitText = '<p class="text-xs text-yellow-400">Limit: 5 per order</p>';
         }
 
+        const customBadge = item.isCustom
+          ? `<span class="inline-block text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded px-1.5 py-0.5 mt-1">✦ Custom | ${item.customTag || 'Stock'}</span>`
+          : '';
+
         return `
-          <div class="bg-gray-700 p-3 rounded-lg">
+          <div class="bg-gray-700 p-3 rounded-lg${item.isCustom ? ' border border-amber-500/30' : ''}">
             <div class="mb-2">
               <h3 class="font-bold text-sm">${item.name}</h3>
-              <p class="text-xs text-gray-300">${item.fullName}</p>
+              ${customBadge}
+              <p class="text-xs text-gray-300 mt-1">${item.fullName}</p>
               <p class="text-xs text-green-400">Free</p>
-              ${limitText}
+              ${item.isCustom ? '' : limitText}
             </div>
             <div class="flex justify-between items-center">
+              ${item.isCustom ? `
+              <span class="text-xs text-amber-400/70 italic">Crafted · qty 1</span>
+              <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-300 text-xs font-semibold">Remove</button>
+              ` : `
               <div class="flex items-center space-x-2">
                 <button onclick="updateQuantity(${index}, ${item.quantity - 1})" class="bg-red-600 px-2 py-1 rounded hover:bg-red-500 text-xs">-</button>
                 <span class="text-sm">${item.quantity}</span>
@@ -2160,6 +3077,7 @@
               <div class="text-right">
                 <button onclick="removeFromCart(${index})" class="text-red-400 hover:text-red-300 text-xs">Remove</button>
               </div>
+              `}
             </div>
           </div>
         `;
@@ -2173,7 +3091,7 @@
             <div class="space-y-1">
               ${cart.map(item => `
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-300">${item.quantity}x ${item.name}</span>
+                  <span class="text-gray-300">${item.quantity}x ${item.name}${item.isCustom ? ` <span class="text-amber-400">[Custom | ${item.customTag || 'Stock'}]</span>` : ''}</span>
                   <span class="text-green-400">Free</span>
                 </div>
               `).join('')}
@@ -2315,10 +3233,11 @@
             discordUsername: discordUsername.value.trim(),
             discordId: discordId,
             items: cart.map(item => ({
-              name: item.name,
-              fullName: item.fullName,
+              name: item.isCustom ? `${item.name} [Custom | ${item.customTag || 'Stock'}]` : item.name,
+              fullName: item.isCustom ? `${item.fullName} [Custom | ${item.customTag || 'Stock'}]` : item.fullName,
               price: item.price,
-              quantity: item.quantity
+              quantity: item.quantity,
+              notes: item.isCustom && item.customNotes ? item.customNotes : undefined
             })),
             availability: availabilityData.ranges,
             status: 'Received',
@@ -2331,7 +3250,13 @@
           confirmationMessage += `Collection: CRU-L1\n\n`;
           confirmationMessage += `Equipment Requested:\n`;
           cart.forEach((item, index) => {
-            confirmationMessage += `• ${item.quantity}x ${item.name}\n`;
+            const label = item.isCustom
+              ? `${item.name} [Custom | ${item.customTag || 'Stock'}]`
+              : item.name;
+            confirmationMessage += `• ${item.quantity}x ${label}\n`;
+            if (item.isCustom && item.customNotes) {
+              confirmationMessage += `  Notes: ${item.customNotes}\n`;
+            }
           });
           confirmationMessage += `\nYour request has been submitted to logistics for processing.`;
           window.orderReceiptData = {
@@ -2490,42 +3415,49 @@
     }
 
     async function sendToMedrunnerSystem(requestData) {
-      try {
-        validateMedrunnerConfig();
-      } catch (error) {
-        throw new Error(`Configuration Error: ${error.message}`);
+      // ── Route through the authenticated bot server ────────────────────────
+      // The bot server verifies the session token, enforces rate limits and
+      // quantity caps, then forwards to Apps Script with the shared secret.
+      // Direct calls to the Apps Script URL will be rejected (Bug 1 fix).
+      const sessionToken = localStorage.getItem('sessionToken');
+      if (!sessionToken) {
+        throw new Error('Not authenticated — please log in with Discord first.');
       }
 
-      const { APPS_SCRIPT_URL } = window.MEDRUNNER_CONFIG;
-      const secureRequestData = {
-        action: 'submitRequest',
-        orderId: sanitizeInput(requestData.orderId),
-        timestamp: requestData.timestamp,
-        date: requestData.date,
-        discordUsername: sanitizeInput(requestData.discordUsername),
-        discordId: sanitizeInput(requestData.discordId || ''),
-        items: JSON.stringify(requestData.items.map(item => ({
-          name: sanitizeInput(item.name),
-          fullName: sanitizeInput(item.fullName),
-          quantity: parseInt(item.quantity)
-        }))),
-        availability: sanitizeInput(requestData.availability || ''),
-        notes: sanitizeInput(requestData.notes || '')
-      };
-      // Only log in development mode - comment out for production
-      // console.log('Sending equipment request:', secureRequestData.orderId);
+      const API_URL = window.MEDRUNNER_AUTH ? window.MEDRUNNER_AUTH.API_URL : '';
+      if (!API_URL) throw new Error('Auth system not initialised.');
 
-      // Use JSONP with retry to bypass CORS
-      const jsonResult = await fetchWithRetry(APPS_SCRIPT_URL, secureRequestData);
+      const response = await fetch(`${API_URL}/api/submit-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: sessionToken,
+          orderData: {
+            items: requestData.items.map(item => ({
+              name:     sanitizeInput(item.name),
+              fullName: sanitizeInput(item.fullName || item.name),
+              quantity: parseInt(item.quantity, 10)
+            })),
+            availability: sanitizeInput(requestData.availability || ''),
+            notes:        sanitizeInput(requestData.notes || '')
+          }
+        })
+      });
+
+      // 401 = token expired / invalid
+      if (response.status === 401) {
+        window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH._clearSession();
+        throw new Error('Your session has expired — please log in again.');
+      }
+
+      const jsonResult = await response.json();
 
       if (!jsonResult.success) {
         console.error('❌ Server returned error:', jsonResult.message);
         throw new Error(jsonResult.message || 'Server-side validation failed');
       }
 
-      // Success - only log order ID
       console.log('✓ Order submitted:', jsonResult.data?.orderId || 'Unknown ID');
-
       return jsonResult;
     }
 
