@@ -1,29 +1,18 @@
-// My Orders Page JavaScript
-// API endpoint
 const API = 'https://angla-unsanctionable-visually.ngrok-free.dev';
-
 let currentUser = null;
 let userOrders = [];
 let currentOrder = null;
-
-// Initialize with global auth system
 window.addEventListener('medrunnerAuthReady', (event) => {
   currentUser = event.detail.user;
-  // console.log('My Orders: User authenticated', currentUser);
   loadUserOrders();
 });
-
-// Check if user is authenticated
 function isAuthenticated() {
   return window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.isAuth();
 }
-
-// Get current user
 function getCurrentUser() {
   return window.MEDRUNNER_AUTH ? window.MEDRUNNER_AUTH.getUser() : null;
 }
 
-// Load user orders from API
 async function loadUserOrders() {
   const loadingContainer = document.getElementById('loading-container');
   const ordersContainer = document.getElementById('orders-container');
@@ -54,8 +43,6 @@ async function loadUserOrders() {
 
     if (data && data.success && data.data) {
       userOrders = data.data;
-      // console.log(`Loaded ${userOrders.length} orders for user`);
-
       if (userOrders.length === 0) {
         loadingContainer.classList.add('hidden');
         noOrdersMessage.classList.remove('hidden');
@@ -75,23 +62,18 @@ async function loadUserOrders() {
   }
 }
 
-// Render orders list
 function renderOrders() {
   const ordersContainer = document.getElementById('orders-container');
   ordersContainer.innerHTML = '';
-
-  // Separate active and completed orders
   const activeOrders = userOrders.filter(order => {
     const status = (order.status || '').toLowerCase();
     return status !== 'completed' && status !== 'cancelled';
   });
-
   const completedOrders = userOrders.filter(order => {
     const status = (order.status || '').toLowerCase();
     return status === 'completed' || status === 'cancelled';
   });
 
-  // Active Orders Section
   if (activeOrders.length > 0) {
     const activeSection = document.createElement('div');
     activeSection.className = 'mb-8';
@@ -113,7 +95,6 @@ function renderOrders() {
     });
   }
 
-  // Completed Orders Section
   if (completedOrders.length > 0) {
     const completedSection = document.createElement('div');
     completedSection.className = 'mb-8';
@@ -136,16 +117,13 @@ function renderOrders() {
   }
 }
 
-// Format availability timestamps to human-readable format
 function formatAvailability(availabilityString) {
   if (!availabilityString) return 'Not specified';
 
   try {
-    // Split by comma to get individual time ranges
     const ranges = availabilityString.split(',').map(r => r.trim());
 
     const formattedRanges = ranges.map(range => {
-      // Split by dash to get from and to timestamps
       const [fromUnix, toUnix] = range.split('-').map(t => parseInt(t.trim()));
 
       if (!fromUnix || !toUnix) return null;
@@ -153,14 +131,12 @@ function formatAvailability(availabilityString) {
       const fromDate = new Date(fromUnix * 1000);
       const toDate = new Date(toUnix * 1000);
 
-      // Format date
       const dateStr = fromDate.toLocaleDateString('en-US', {
         weekday: 'short',
         month: 'short',
         day: 'numeric'
       });
 
-      // Format times
       const fromTime = fromDate.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
@@ -172,7 +148,6 @@ function formatAvailability(availabilityString) {
         hour12: true
       });
 
-      // Check if it's an "all day" slot (00:00 to 23:59)
       const isAllDay = fromDate.getHours() === 0 && fromDate.getMinutes() === 0 &&
                        toDate.getHours() === 23 && toDate.getMinutes() === 59;
 
@@ -190,23 +165,18 @@ function formatAvailability(availabilityString) {
     return formattedRanges.join('<br>');
   } catch (error) {
     console.error('Error formatting availability:', error);
-    return availabilityString; // Return original if parsing fails
+    return availabilityString;
   }
 }
 
-// Normalize status text for display (user-friendly names)
 function normalizeStatusText(status) {
   const statusLower = (status || '').toLowerCase();
-
   if (statusLower === 'pending collection') {
     return 'Ready to Collect';
   }
-
-  // Return original status for all other cases
   return status || 'Unknown';
 }
 
-// Get status icon SVG
 function getStatusIcon(status) {
   const statusLower = (status || '').toLowerCase();
 
@@ -225,14 +195,12 @@ function getStatusIcon(status) {
   return '';
 }
 
-// Create order card element
 function createOrderCard(order, isCompleted = false) {
   const card = document.createElement('div');
   const cardSize = isCompleted ? 'p-4' : 'p-6';
   const textSize = isCompleted ? 'text-lg' : 'text-xl';
   const completedClass = isCompleted ? 'completed-order-card' : '';
 
-  // Check if order is ready to collect for special glow effect
   const statusLower = (order.status || '').toLowerCase();
   const isReadyToCollect = statusLower === 'pending collection' || statusLower === 'ready to collect' || statusLower === 'ready';
   const glowClass = isReadyToCollect ? 'ready-to-collect-glow' : '';
@@ -245,21 +213,15 @@ function createOrderCard(order, isCompleted = false) {
   const statusText = normalizeStatusText(order.status);
   const statusIcon = getStatusIcon(order.status);
 
-  // Format date
   const orderDate = order.date || order.timestamp || 'Unknown';
 
-  // Parse items
   let itemsHtml = '';
   try {
     let items = [];
-
-    // Try to parse as JSON first
     if (order.items) {
       try {
         items = JSON.parse(order.items);
       } catch (jsonError) {
-        // If JSON parsing fails, treat as plain text string
-        // Split by newlines or commas and create simple item list
         const itemLines = order.items.split(/[\n,]/).filter(line => line.trim());
         items = itemLines.map(line => ({ name: line.trim(), quantity: 1 }));
       }
@@ -277,7 +239,6 @@ function createOrderCard(order, isCompleted = false) {
     }
   } catch (e) {
     console.error('Error parsing items:', e, order.items);
-    // Fallback: just display the raw items string
     if (order.items) {
       itemsHtml = `<li class="text-gray-400">${order.items}</li>`;
     } else {
@@ -357,7 +318,6 @@ function createOrderCard(order, isCompleted = false) {
   return card;
 }
 
-// Get status class for badge
 function getStatusClass(status) {
   const statusLower = (status || '').toLowerCase();
   if (statusLower === 'received') return 'status-received';
@@ -369,7 +329,6 @@ function getStatusClass(status) {
   return 'status-received';
 }
 
-// Open order details panel
 async function openOrderDetails(order) {
   currentOrder = order;
   const panel = document.getElementById('order-details-panel');
@@ -381,18 +340,14 @@ async function openOrderDetails(order) {
   title.textContent = order.orderId;
   subtitle.textContent = `Placed on ${order.date || order.timestamp || 'Unknown'}`;
 
-  // Parse items
   let itemsHtml = '';
   try {
     let items = [];
 
-    // Try to parse as JSON first
     if (order.items) {
       try {
         items = JSON.parse(order.items);
       } catch (jsonError) {
-        // If JSON parsing fails, treat as plain text string
-        // Split by newlines or commas and create simple item list
         const itemLines = order.items.split(/[\n,]/).filter(line => line.trim());
         items = itemLines.map(line => ({ name: line.trim(), quantity: 1 }));
       }
@@ -410,7 +365,6 @@ async function openOrderDetails(order) {
     }
   } catch (e) {
     console.error('Error parsing items in modal:', e, order.items);
-    // Fallback: just display the raw items string
     if (order.items) {
       itemsHtml = `<div class="text-gray-300 whitespace-pre-wrap">${order.items}</div>`;
     } else {
@@ -479,10 +433,7 @@ async function openOrderDetails(order) {
     ` : ''}
   `;
 
-  // Load thread messages
   await loadThreadMessages(order.orderId);
-
-  // Disable messaging for completed/cancelled orders
   const statusLower = (order.status || '').toLowerCase();
   const isOrderClosed = statusLower === 'completed' || statusLower === 'cancelled';
 
@@ -512,7 +463,6 @@ async function openOrderDetails(order) {
       }
     }
   } else {
-    // Re-enable for active orders
     if (messageInput) {
       messageInput.disabled = false;
       messageInput.placeholder = 'Type your message here...';
@@ -530,11 +480,9 @@ async function openOrderDetails(order) {
     }
   }
 
-  // Show panel and hide empty state
   emptyState.classList.add('hidden');
   panel.classList.remove('hidden');
 
-  // Highlight the selected order card
   document.querySelectorAll('.professional-card').forEach(card => {
     card.classList.remove('active');
   });
@@ -544,7 +492,6 @@ async function openOrderDetails(order) {
   }
 }
 
-// Close order details panel
 function closeOrderDetailsPanel() {
   const panel = document.getElementById('order-details-panel');
   const emptyState = document.getElementById('order-details-empty');
@@ -553,7 +500,6 @@ function closeOrderDetailsPanel() {
   currentOrder = null;
 }
 
-// Load thread messages
 async function loadThreadMessages(orderId) {
   const messageContainer = document.getElementById('thread-messages');
 
@@ -614,7 +560,6 @@ async function loadThreadMessages(orderId) {
 
           let content = msg.content || '';
 
-          // Handle embeds
           if (msg.embeds && msg.embeds.length > 0) {
             msg.embeds.forEach(embed => {
               if (embed.description) {
@@ -651,14 +596,12 @@ async function loadThreadMessages(orderId) {
   }
 }
 
-// Send message to thread
 async function sendThreadMessage() {
   if (!currentOrder) {
     showToast('No order selected', 'error');
     return;
   }
 
-  // Check if order is completed or cancelled
   const statusLower = (currentOrder.status || '').toLowerCase();
   if (statusLower === 'completed' || statusLower === 'cancelled') {
     showToast(`Cannot send messages - order is ${currentOrder.status}`, 'error');
@@ -681,7 +624,7 @@ async function sendThreadMessage() {
         action: 'sendMessage',
         orderId: currentOrder.orderId,
         message: message,
-        isStaff: false // This is from the client/user, not staff
+        isStaff: false
       })
     });
 
@@ -691,7 +634,6 @@ async function sendThreadMessage() {
       showToast('Message sent successfully', 'success');
       messageInput.value = '';
 
-      // Reload messages
       await loadThreadMessages(currentOrder.orderId);
     } else {
       throw new Error(data.message || 'Failed to send message');
@@ -702,14 +644,12 @@ async function sendThreadMessage() {
   }
 }
 
-// Show toast notification
 function showToast(message, type = 'success') {
   const toast = document.getElementById('toast-notification');
   const toastMessage = document.getElementById('toast-message');
 
   toastMessage.textContent = message;
 
-  // Change color based on type
   if (type === 'error') {
     toast.style.backgroundColor = '#ef4444';
     toast.style.borderColor = '#dc2626';
@@ -727,32 +667,26 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', async function() {
-  // Check if user is authenticated
   if (isAuthenticated()) {
     currentUser = getCurrentUser();
     if (currentUser) {
-      // console.log('✓ Authenticated as:', currentUser.discordUsername);
       await loadUserOrders();
     } else {
       console.error('❌ No user data found');
       redirectToLogin();
     }
   } else {
-    // Not authenticated, redirect to main page
     console.error('❌ User not authenticated');
     redirectToLogin();
   }
 });
 
-// Redirect to login
 function redirectToLogin() {
   alert('Please log in with Discord to view your orders.');
   window.location.href = 'index.html';
 }
 
-// Close modal on escape key
 document.addEventListener('keydown', function(event) {
   if (event.key === 'Escape') {
     closeOrderDetailsModal();
