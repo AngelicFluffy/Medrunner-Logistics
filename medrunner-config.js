@@ -3,14 +3,12 @@ window.MEDRUNNER_CONFIG = {
 
   APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby7M6hjhxkzZ8eCEDNPT3qPnntSlB8pqdQAJ375NvPYY1VXQB2zKE_gOYFD-Ll2Yj5X/exec',
 
-  // Sheet names
   SHEETS: {
-    INVENTORY: 'Inventory', // Tab 1 - Equipment listings
-    LOOKUP: 'Lookup', // Tab 2 - Kit calculations
-    ORDERS: 'Orders' // Tab 3 - Equipment requests
+    INVENTORY: 'Inventory',
+    LOOKUP: 'Lookup',
+    ORDERS: 'Orders'
   },
   
-  // Organization details
   ORGANIZATION: {
     NAME: 'Medrunner Logistics',
     DESCRIPTION: 'All hail the box. Keeper of things, pakager of all, let your boundless equality extend eternally',
@@ -136,14 +134,11 @@ window.MedrunnerConfig = {
   }
 };
 
-// on load
 document.addEventListener('DOMContentLoaded', function() {
   const validation = window.MedrunnerConfig.validate();
   
   if (!validation.isValid) {
     console.warn('Medrunner Configuration Issues:', validation.errors);
-    
-    // configuration warning
     const warningDiv = document.createElement('div');
     warningDiv.style.cssText = `
       position: fixed;
