@@ -1,50 +1,62 @@
-/**
- * Medrunner Portal Authentication System
- * This script handles global authentication across all pages using Discord OAuth
- */
-
 window.MEDRUNNER_AUTH = {
   API_URL: 'https://angla-unsanctionable-visually.ngrok-free.dev',
   currentUser: null,
   isAuthenticated: false,
   authWindow: null,
   refreshInterval: null,
-
-  /**
-   * Initialize authentication on page load
-   */
   async init() {
-    // Check if user is already authenticated (from localStorage)
-    const storedUser = localStorage.getItem('medrunnerUser');
-    if (storedUser) {
-      try {
-        this.currentUser = JSON.parse(storedUser);
-        this.isAuthenticated = true;
-        this.applyAuthState();
+    const sessionToken = localStorage.getItem('sessionToken');
+    const storedDisplay = localStorage.getItem('medrunnerUser');
 
-        // Refresh user data on page load to get latest roles
-        this.refreshUserData();
+    if (sessionToken && storedDisplay) {
+      try {
+        const displayUser = JSON.parse(storedDisplay);
+        this.currentUser = {
+          discordId:            displayUser.discordId,
+          discordUsername:      displayUser.discordUsername,
+          discordAvatar:        displayUser.discordAvatar,
+          discordDiscriminator: displayUser.discordDiscriminator,
+          rsiHandle:            displayUser.rsiHandle || '',
+          isStaff:          false,
+          isLogisticsStaff: false,
+          isAcademyStaff:   false,
+          roles:            []
+        };
+        this.isAuthenticated = true;
+        this.applyAuthState(true);
+        await this.verifyAndRefreshSession(sessionToken);
         return;
       } catch (error) {
-        console.error('❌ Failed to restore authentication:', error);
-        localStorage.removeItem('medrunnerUser');
+        console.error('Failed to restore session:', error);
+        this._clearSession();
       }
     }
 
-    // Listen for OAuth callback messages
     window.addEventListener('message', (event) => {
-      // Security: In production, verify event.origin
-      if (event.data && event.data.success && event.data.user) {
-        this.currentUser = event.data.user;
+      if (event.origin !== this.API_URL && event.origin !== window.location.origin) return;
+
+      if (event.data && event.data.success && event.data.token && event.data.user) {
+        const { token, user } = event.data;
+
+        const displayData = {
+          discordId:            user.discordId,
+          discordUsername:      user.discordUsername,
+          discordAvatar:        user.discordAvatar,
+          discordDiscriminator: user.discordDiscriminator,
+          rsiHandle:            user.rsiHandle || ''
+        };
+        localStorage.setItem('sessionToken', token);
+        localStorage.setItem('medrunnerUser', JSON.stringify(displayData));
+        this.currentUser = {
+          ...displayData,
+          isStaff:          false,
+          isLogisticsStaff: false,
+          isAcademyStaff:   false,
+          roles:            []
+        };
         this.isAuthenticated = true;
-
-        // Store in localStorage
-        localStorage.setItem('medrunnerUser', JSON.stringify(event.data.user));
-
-        // Apply authentication state
-        this.applyAuthState();
-
-        // Close auth window if it's still open
+        this.applyAuthState(true);
+        this.verifyAndRefreshSession(token);
         if (this.authWindow && !this.authWindow.closed) {
           this.authWindow.close();
         }
@@ -52,79 +64,110 @@ window.MEDRUNNER_AUTH = {
     });
   },
 
-
-
   /**
-   * Refresh user data from server (called on page load)
+   * @param {string} token
    */
-  async refreshUserData() {
-    if (!this.currentUser || !this.currentUser.discordId) {
-      return;
-    }
-
+  async verifyAndRefreshSession(token) {
     try {
-      const response = await fetch(`${this.API_URL}/auth/refresh`, {
+      const response = await fetch(`${this.API_URL}/auth/verify`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          discordId: this.currentUser.discordId
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
       });
 
+      if (response.status === 401) {
+        console.warn('Session token rejected by server — clearing session');
+        this._clearSession();
+        this.applyAuthState();
+        return;
+      }
+
       if (!response.ok) {
-        // Don't throw error, just log warning - cached data is still valid
-        console.warn('⚠️ Could not refresh user data from server, using cached data');
+        console.warn('Could not verify session (server returned', response.status, ')');
+        this.applyAuthState();
         return;
       }
 
       const data = await response.json();
 
       if (data.success && data.user) {
-        // Check if roles have changed
-        const oldRoles = JSON.stringify(this.currentUser.roles || []);
-        const newRoles = JSON.stringify(data.user.roles || []);
+        const verified = data.user;
+        const oldRoles = JSON.stringify(this.currentUser?.roles || []);
+        const newRoles = JSON.stringify(verified.roles || []);
 
+        this.currentUser = {
+          ...this.currentUser,
+          roles:            verified.roles,
+          isStaff:          verified.isStaff,
+          isLogisticsStaff: verified.isLogisticsStaff,
+          isAcademyStaff:   verified.isAcademyStaff
+        };
+        this.isAuthenticated = true;
+
+        this.applyAuthState();
         if (oldRoles !== newRoles) {
-          // console.log('✓ User roles updated from server');
-          // Update user data while preserving other fields
-          this.currentUser = {
-            ...this.currentUser,
-            roles: data.user.roles,
-            isStaff: data.user.isStaff,
-            isLogisticsStaff: data.user.isLogisticsStaff,
-            isAcademyStaff: data.user.isAcademyStaff
-          };
-
-          // Update localStorage
-          localStorage.setItem('medrunnerUser', JSON.stringify(this.currentUser));
-
-          // Re-apply auth state to update UI
-          this.applyAuthState();
-
-          // Dispatch event for other scripts
-          window.dispatchEvent(new CustomEvent('medrunnerAuthUpdated', {
-            detail: { user: this.currentUser }
-          }));
+          window.dispatchEvent(new CustomEvent('medrunnerAuthUpdated', { detail: { user: this.currentUser } }));
         }
       }
     } catch (error) {
-      // Non-critical error - just log as warning
-      console.warn('⚠️ Could not refresh user data:', error.message);
+      console.warn('Could not reach auth server:', error.message);
+      this.applyAuthState();
     }
   },
 
-  /**
-   * Show login button
-   */
+  _clearSession() {
+    localStorage.removeItem('sessionToken');
+    localStorage.removeItem('medrunnerUser');
+    this.currentUser = null;
+    this.isAuthenticated = false;
+  },
+
+  async refreshUserData() {
+    const sessionToken = localStorage.getItem('sessionToken');
+    if (!sessionToken) return;
+
+    try {
+      const response = await fetch(`${this.API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: sessionToken })
+      });
+
+      if (!response.ok) {
+        console.warn('Could not refresh user data from server');
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.user && data.token) {
+        localStorage.setItem('sessionToken', data.token);
+
+        const oldRoles = JSON.stringify(this.currentUser?.roles || []);
+        const newRoles = JSON.stringify(data.user.roles || []);
+
+        this.currentUser = {
+          ...this.currentUser,
+          roles:            data.user.roles,
+          isStaff:          data.user.isStaff,
+          isLogisticsStaff: data.user.isLogisticsStaff,
+          isAcademyStaff:   data.user.isAcademyStaff
+        };
+
+        if (oldRoles !== newRoles) {
+          this.applyAuthState();
+          window.dispatchEvent(new CustomEvent('medrunnerAuthUpdated', { detail: { user: this.currentUser } }));
+        }
+      }
+    } catch (error) {
+      console.warn('Could not refresh user data:', error.message);
+    }
+  },
+
   showLoginButton() {
-    // Check if login button already exists
     if (document.getElementById('medrunner-login-btn')) {
       return;
     }
-
-    // Create login button
     const loginBtn = document.createElement('button');
     loginBtn.id = 'medrunner-login-btn';
     loginBtn.innerHTML = `
@@ -169,9 +212,6 @@ window.MEDRUNNER_AUTH = {
     document.body.appendChild(loginBtn);
   },
 
-  /**
-   * Open Discord OAuth login window
-   */
   loginWithDiscord() {
     const width = 500;
     const height = 700;
@@ -185,78 +225,57 @@ window.MEDRUNNER_AUTH = {
       'Discord Login',
       `width=${width},height=${height},left=${left},top=${top}`
     );
-
-    // Check if popup was blocked
     if (!this.authWindow || this.authWindow.closed || typeof this.authWindow.closed === 'undefined') {
-      console.error('❌ Popup blocked! Please allow popups for this site.');
+      console.error('Popup blocked! Please allow popups for this site.');
       alert('Popup blocked! Please allow popups for this site and try again.');
     }
   },
 
-  /**
-   * Logout user
-   */
   logout() {
-    this.currentUser = null;
-    this.isAuthenticated = false;
-    localStorage.removeItem('medrunnerUser');
-
-    // Remove login button if it exists
+    this._clearSession();
     const loginBtn = document.getElementById('medrunner-login-btn');
     if (loginBtn) {
       loginBtn.remove();
     }
-
-    // Reload page
     window.location.reload();
   },
 
   /**
-   * Apply authentication state to the current page
+   * @param {boolean} skipReadyEvent
    */
-  applyAuthState() {
+  applyAuthState(skipReadyEvent = false) {
     if (!this.isAuthenticated || !this.currentUser) {
+      if (!skipReadyEvent) {
+        window.dispatchEvent(new CustomEvent('medrunnerAuthReady', {
+          detail: { user: null }
+        }));
+      }
       return;
     }
-
-    // Remove login button
     const loginBtn = document.getElementById('medrunner-login-btn');
     if (loginBtn) {
       loginBtn.remove();
     }
-
-    // Show user info
     this.showUserInfo();
-
-    // Auto-fill Discord username on index page
     this.autoFillDiscordUsername();
-
-    // Show/hide staff control navigation based on role
     this.toggleStaffNavigation();
-
-    // Dispatch custom event for other scripts to listen to
-    window.dispatchEvent(new CustomEvent('medrunnerAuthReady', {
-      detail: { user: this.currentUser }
-    }));
+    if (!skipReadyEvent) {
+      window.dispatchEvent(new CustomEvent('medrunnerAuthReady', {
+        detail: { user: this.currentUser }
+      }));
+    }
   },
 
-  /**
-   * Show user info in navigation bar
-   */
   showUserInfo() {
-    // Check if user info already exists
     if (document.getElementById('medrunner-user-info')) {
       return;
     }
-
-    // Find the navigation bar user info container
     const navUserContainer = document.getElementById('nav-user-info');
     if (!navUserContainer) {
-      console.warn('⚠️ Navigation user info container not found');
+      console.warn('Navigation user info container not found');
       return;
     }
 
-    // Create user info HTML
     navUserContainer.innerHTML = `
       <div class="flex items-center space-x-3">
         ${this.currentUser.discordAvatar ?
@@ -281,48 +300,32 @@ window.MEDRUNNER_AUTH = {
     `;
 
     navUserContainer.style.display = 'flex';
-
-    // logout button handler
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
       logoutBtn.onclick = () => this.logout();
     }
   },
   
-  /**
-   * Auto-fill Discord username field
-   */
   autoFillDiscordUsername() {
     const discordUsernameField = document.getElementById('discord-username');
 
     if (discordUsernameField && this.currentUser.discordUsername) {
       discordUsernameField.value = this.currentUser.discordUsername;
-
-      // Make it read only
       discordUsernameField.setAttribute('readonly', 'readonly');
       discordUsernameField.style.backgroundColor = '#1a2332';
       discordUsernameField.style.cursor = 'not-allowed';
     }
   },
 
-  /**
-   * Show/hide staff control navigation based on user role
-   */
   toggleStaffNavigation() {
     const staffNavLink = document.querySelector('a[href="staff-control.html"]');
     const myOrdersLink = document.querySelector('a[href="my-orders.html"]');
     const staffDivider = document.getElementById('staff-control-divider');
-
-    // Show My Orders link for all authenticated users
     if (myOrdersLink) {
       myOrdersLink.style.display = 'block';
     }
-
-    // Show staff control link only for logistics staff
     if (staffNavLink) {
-      // Check if user is logistics staff
       const isLogisticsStaff = this.isLogisticsStaff();
-
       if (isLogisticsStaff) {
         staffNavLink.style.display = 'block';
         if (staffDivider) staffDivider.style.display = 'block';
@@ -333,45 +336,26 @@ window.MEDRUNNER_AUTH = {
     }
   },
   
-  /**
-   * Check if current user is logistics staff
-   */
   isLogisticsStaff() {
     if (!this.currentUser) return false;
-
-    // Check if user has isLogisticsStaff flag (from backend)
     if (this.currentUser.isLogisticsStaff) return true;
-
-    // Check if user has logistics role
     if (this.currentUser.roles && Array.isArray(this.currentUser.roles)) {
       const logisticsRoles = ['logistics', 'logistics staff'];
       return this.currentUser.roles.some(role =>
         logisticsRoles.includes(role.toLowerCase())
       );
     }
-
     return false;
   },
-  
-  /**
-   * Get current user data
-   */
-  getUser() {
+    getUser() {
     return this.currentUser;
   },
-  
-  /**
-   * Check if user is authenticated
-   */
   isAuth() {
     return this.isAuthenticated;
   }
 };
-
-// Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => window.MEDRUNNER_AUTH.init());
 } else {
   window.MEDRUNNER_AUTH.init();
 }
-
