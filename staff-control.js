@@ -5,33 +5,47 @@ let filteredArchivedOrders = [];
 let currentPage = 1;
 let ordersPerPage = 10;
 
-// For local testing: 'http://localhost:3000'
-// For ngrok: 'https://your-ngrok-url.ngrok.io'
-// For production: 'https://your-server.com:3000'
 const API = 'https://angla-unsanctionable-visually.ngrok-free.dev';
 
-// Discord authentication integration
 let currentUser = null;
+let staffPageInitialized = false;
 
-// Initialize with global auth system
 window.addEventListener('medrunnerAuthReady', (event) => {
-  currentUser = event.detail.user;
-  console.log('Staff Control: User authenticated', currentUser);
+  const user = event.detail?.user;
 
-  // Verify user has logistics staff role (ONLY logistics, not academy)
+  if (!user) {
+    alert('Please log in with Discord to access the staff control panel.');
+    window.location.href = 'index.html';
+    return;
+  }
+
+  currentUser = user;
+  console.log('Staff Control: Session verified for', currentUser.discordUsername,
+    '| isLogisticsStaff:', currentUser.isLogisticsStaff);
+
   if (!currentUser.isLogisticsStaff) {
-    console.error('❌ User does not have logistics staff role');
+    console.error('User does not have logistics staff role');
     alert('Access denied: You must be a Logistics staff member to access this page.');
     window.location.href = 'index.html';
+    return;
   }
+
+  if (staffPageInitialized) return;
+  staffPageInitialized = true;
+
+  fetchOrders();
+  setInterval(() => {
+    const panel = document.getElementById('order-detail-panel');
+    if (!panel || !panel.classList.contains('active')) {
+      fetchOrders();
+    }
+  }, 60000);
 });
 
-// Check if user is authenticated
 function isAuthenticated() {
   return window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.isAuth();
 }
 
-// Get current user info
 function getCurrentUser() {
   if (window.MEDRUNNER_AUTH && window.MEDRUNNER_AUTH.isAuth()) {
     return window.MEDRUNNER_AUTH.getUser();
@@ -39,7 +53,6 @@ function getCurrentUser() {
   return null;
 }
 
-// Logout
 function logout() {
   if (window.MEDRUNNER_AUTH) {
     window.MEDRUNNER_AUTH.logout();
@@ -1021,11 +1034,9 @@ async function claimOrderInternal(orderId, fromModal) {
 
   let username;
 
-  // Try to get username from Portal user first
   if (currentUser && currentUser.discordUsername) {
     username = currentUser.discordUsername;
   } else {
-    // Fallback to saved username or prompt
     let savedUsername = localStorage.getItem('staffDiscordUsername');
     username = savedUsername;
 
@@ -1123,37 +1134,12 @@ function showToast(message, type = 'info') {
   }, 3000);
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
-  // Check if user is authenticated with Discord
-  if (isAuthenticated()) {
-    const user = getCurrentUser();
-    if (user) {
-      console.log('✓ Authenticated with Discord as:', user.discordUsername);
-
-      // Verify user has logistics staff role (ONLY logistics, not academy)
-      if (!user.isLogisticsStaff) {
-        console.error('❌ User does not have logistics staff role');
-        alert('Access denied: You must be a Logistics staff member to access this page.');
-        window.location.href = 'index.html';
-        return;
-      }
-    }
-  } else {
-    // Not authenticated, redirect to main page
-    console.error('❌ User not authenticated');
+document.addEventListener('DOMContentLoaded', function() {
+  if (!isAuthenticated()) {
+    console.error('User not authenticated');
     alert('Please log in with Discord to access the staff control panel.');
     window.location.href = 'index.html';
-    return;
   }
-
-  fetchOrders();
-
-  setInterval(() => {
-    const panel = document.getElementById('order-detail-panel');
-    if (!panel || !panel.classList.contains('active')) {
-      fetchOrders();
-    }
-  }, 60000);
 });
 
 document.addEventListener('keydown', function(e) {
