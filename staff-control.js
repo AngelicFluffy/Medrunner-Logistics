@@ -24,7 +24,7 @@ window.addEventListener('medrunnerAuthReady', (event) => {
     '| isLogisticsStaff:', currentUser.isLogisticsStaff);
 
   if (!currentUser.isLogisticsStaff) {
-    console.error('User does not have logistics staff role');
+    console.error('❌ User does not have logistics staff role');
     alert('Access denied: You must be a Logistics staff member to access this page.');
     window.location.href = 'index.html';
     return;
@@ -171,7 +171,18 @@ function formatDate(dateString) {
   if (!dateString) return 'No date';
 
   try {
-    const date = new Date(dateString);
+    let date = new Date(dateString);
+
+    if (isNaN(date.getTime())) {
+      const match = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+      if (match) {
+        const [, day, month, year, hours, minutes, seconds] = match;
+        date = new Date(year, month - 1, day, hours, minutes, seconds || 0);
+      }
+    }
+
+    if (isNaN(date.getTime())) return dateString;
+
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -253,7 +264,6 @@ function renderOrders() {
     if (totalActive === 0) {
       noOrdersMsg.classList.remove('hidden');
     } else {
-      // Open Orders Section
       if (openOrders.length > 0) {
         const openSection = document.createElement('div');
         openSection.innerHTML = `
@@ -1136,7 +1146,7 @@ function showToast(message, type = 'info') {
 
 document.addEventListener('DOMContentLoaded', function() {
   if (!isAuthenticated()) {
-    console.error('User not authenticated');
+    console.error('❌ User not authenticated');
     alert('Please log in with Discord to access the staff control panel.');
     window.location.href = 'index.html';
   }
